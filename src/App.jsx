@@ -74,7 +74,7 @@ async function uploadItem(item) {
   if (!UPLOAD_ENDPOINT) return { queued: true };
   const response = await fetch(UPLOAD_ENDPOINT, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({
       requestId: item.requestId,
       filename: item.filename,
