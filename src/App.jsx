@@ -330,9 +330,18 @@ function App() {
         <div className="panel preview-panel">
           <div className="section-heading"><span className="step-number">03</span><div><h3>บันทึก Photo Card</h3><p>ตรวจสอบภาพก่อนบันทึกเป็น PNG</p></div></div>
           <div className={"postcard-preview " + selectedTemplate.className}>
-            {imageSrc ? <img src={imageSrc} alt="ตัวอย่าง Photo Card" style={{ transform: "scale(" + zoom + ")" }} /> : <div className="preview-placeholder">ภาพตัวอย่าง<br />จะปรากฏที่นี่</div>}
-            <div className="preview-overlay"><strong>วิทยาลัยเทคนิคระยอง</strong><span>{today()}</span></div>
-            <div className="preview-footer">RYTC PHOTO CARD</div>
+            <div className="postcard-paper">
+              <div className="postcard-top-line" />
+              <div className="postcard-header">
+                <strong>วิทยาลัยเทคนิคระยอง</strong>
+                <span>{today()}</span>
+              </div>
+              <div className="postcard-photo-frame">
+                {imageSrc ? <img src={imageSrc} alt="ตัวอย่าง Photo Card" style={{ transform: "scale(" + zoom + ")" }} /> : <div className="preview-placeholder">ภาพตัวอย่าง<br />จะปรากฏที่นี่</div>}
+              </div>
+              <div className="postcard-caption">RYTC PHOTO CARD</div>
+              <div className="postcard-subcaption">Rayong Technical College</div>
+            </div>
           </div>
           <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="offscreen-canvas" />
           <button className="save-button" disabled={!imageSrc || busy} onClick={savePostcard}>{busy ? "กำลังบันทึก..." : "บันทึกเป็น PNG"}</button>
