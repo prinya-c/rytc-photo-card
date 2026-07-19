@@ -101,3 +101,45 @@ footer { padding: 35px 0 0; color: #95a197; font-size: .72rem; text-align: cente
 .queue-button { color: #bd7310; }
 @media (max-width: 1050px) { .workspace { grid-template-columns: 1fr 1fr; } .preview-panel { grid-column: span 2; max-width: 420px; width: 100%; justify-self: center; } }
 @media (max-width: 680px) { .app-shell { padding: 18px 14px 26px; } .hero { margin: 35px 0 25px; grid-template-columns: 1fr; } .hero-card { width: 180px; justify-self: end; } .workspace { grid-template-columns: 1fr; } .preview-panel { grid-column: auto; max-width: none; } .panel { padding: 17px; } .camera-stage { min-height: 285px; } .camera-stage video { min-height: 285px; } }
+
+/* Distinct template compositions */
+.postcard-kicker { position: absolute; z-index: 2; top: 5%; left: 10%; color: #17804a; font-size: .48rem; font-weight: 900; letter-spacing: .16em; }
+.postcard-logo { position: absolute; z-index: 3; width: 22%; height: auto; object-fit: contain; }
+.template-sunshine .postcard-logo { top: 9%; left: 39%; }
+.template-sunshine .postcard-kicker { top: 4%; left: 10%; color: #b87c00; }
+.template-sunshine .postcard-header { padding-top: 14%; font-family: Georgia, serif; }
+.template-sunshine .postcard-photo-frame { height: 57%; border-width: 4px; border-radius: 0; }
+.template-sunshine .postcard-caption { font-family: Georgia, serif; letter-spacing: .02em; }
+.template-green-pop .postcard-paper { padding: 10% 8% 8% 25%; text-align: left; }
+.template-green-pop .postcard-top-line { top: 0; bottom: 0; left: 0; right: auto; width: 19%; height: auto; }
+.template-green-pop .postcard-kicker { top: 9%; left: 7%; color: #fff; writing-mode: vertical-rl; transform: rotate(180deg); }
+.template-green-pop .postcard-logo { top: 8%; left: 4%; width: 11%; filter: brightness(0) invert(1); }
+.template-green-pop .postcard-header { align-items: flex-start; height: 20%; font-family: Arial, sans-serif; }
+.template-green-pop .postcard-photo-frame { height: 57%; border-radius: 0 22px 22px 0; border-width: 5px; }
+.template-green-pop .postcard-caption { text-align: left; font-family: Arial, sans-serif; }
+.template-green-pop .postcard-subcaption { text-align: left; }
+.template-tropical .postcard-paper { padding: 20% 8% 8%; background: #fff9fb; }
+.template-tropical .postcard-top-line { top: 0; height: 16%; background: #e84576; }
+.template-tropical .postcard-kicker { top: 5%; left: 34%; color: #fff; font-size: .7rem; }
+.template-tropical .postcard-logo { top: 4%; left: 9%; width: 17%; }
+.template-tropical .postcard-header { position: absolute; top: 8%; left: 35%; align-items: flex-start; color: #fff; text-align: left; font-family: Arial, sans-serif; }
+.template-tropical .postcard-header strong { font-size: .65rem; }
+.template-tropical .postcard-header span { color: #fff; }
+.template-tropical .postcard-photo-frame { height: 62%; border-radius: 18px; border-width: 0; transform: rotate(-1deg); box-shadow: 9px 9px 0 #ffd0dc; }
+.template-tropical .postcard-caption { margin-top: 10%; font-family: Georgia, serif; font-size: 1.15rem; letter-spacing: .1em; }
+.template-tropical .postcard-subcaption { color: #e84576; }
+.template-school-day .postcard-paper { padding: 25% 10% 8%; text-align: left; }
+.template-school-day .postcard-top-line { top: 0; height: 20%; background: #1967a3; }
+.template-school-day .postcard-kicker { top: 7%; left: 10%; color: #fff; font-size: .72rem; }
+.template-school-day .postcard-logo { top: 5%; right: 10%; width: 20%; }
+.template-school-day .postcard-header { align-items: flex-start; height: 15%; font-family: Arial, sans-serif; }
+.template-school-day .postcard-header span { color: #1967a3; }
+.template-school-day .postcard-photo-frame { height: 57%; border-radius: 0; border-width: 3px; }
+.template-school-day .postcard-caption { margin-top: 8%; font-family: Arial, sans-serif; font-size: .85rem; letter-spacing: .12em; }
+.template-school-day .postcard-subcaption { text-align: right; }
+.template-confetti .postcard-paper { padding: 20% 9% 8%; background: #fcf9ff; }
+.template-confetti .postcard-kicker { top: 4%; left: 0; right: 0; text-align: center; color: #8b5cf6; }
+.template-confetti .postcard-logo { top: 9%; left: 42%; width: 16%; }
+.template-confetti .postcard-header { height: 14%; font-family: Georgia, serif; }
+.template-confetti .postcard-photo-frame { height: 59%; border-radius: 0; border-width: 0; box-shadow: 8px 10px 0 #d9c8ff; transform: rotate(-1.5deg); }
+.template-confetti .postcard-caption { margin-top: 9%; font-family: Georgia, serif; font-size: 1.05rem; letter-spacing: .08em; }
