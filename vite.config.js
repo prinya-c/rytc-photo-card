@@ -3,8 +3,10 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+const base = process.env.VITE_BASE_PATH || "/";
+
 export default defineConfig({
-  base: process.env.VITE_BASE_PATH || "/",
+  base,
   plugins: [
     react(),
     tailwindcss(),
@@ -18,13 +20,14 @@ export default defineConfig({
         theme_color: "#17804a",
         background_color: "#fffdf4",
         display: "standalone",
-        start_url: "/",
+        start_url: base,
         icons: [
-          { src: "/favicon.svg", sizes: "any", type: "image/svg+xml", purpose: "any maskable" }
+          { src: base + "favicon.svg", sizes: "any", type: "image/svg+xml", purpose: "any maskable" }
         ]
       },
       workbox: {
-        navigateFallback: "/index.html"
+        navigateFallback: base + "index.html",
+        cleanupOutdatedCaches: true
       }
     })
   ]
