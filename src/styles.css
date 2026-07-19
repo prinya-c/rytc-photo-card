@@ -60,13 +60,39 @@ button { cursor: pointer; border: 0; }
 .zoom-control { display: flex; align-items: center; gap: 10px; margin-top: 15px; color: #6f7f73; font-size: .76rem; }
 .zoom-control input { flex: 1; accent-color: #17804a; }
 .zoom-control strong { color: #17804a; min-width: 30px; }
-.postcard-preview { position: relative; overflow: hidden; aspect-ratio: 2 / 3; border-radius: 20px; background: #eaf4e5; color: #fff; }
-.postcard-preview > img { width: 100%; height: 100%; object-fit: cover; transition: transform .2s; }
+.postcard-preview { position: relative; overflow: hidden; aspect-ratio: 2 / 3; border-radius: 20px; padding: 12px; background: #eaf4e5; }
+.postcard-paper { position: relative; height: 100%; padding: 13% 11% 9%; overflow: hidden; background: #fffdf4; text-align: center; }
+.postcard-top-line { position: absolute; top: 0; left: 0; right: 0; height: 6px; background: #17804a; }
+.postcard-header { min-height: 18%; display: flex; flex-direction: column; justify-content: center; gap: 5px; color: #173b2b; }
+.postcard-header strong { font-size: clamp(.72rem, 2.5vw, 1.05rem); }
+.postcard-header span { color: #17804a; font-size: clamp(.58rem, 1.8vw, .78rem); font-weight: 800; }
+.postcard-photo-frame { height: 58%; overflow: hidden; border: 3px solid #17804a; background: #eff8eb; }
+.postcard-photo-frame > img { width: 100%; height: 100%; object-fit: cover; transition: transform .2s; }
 .preview-placeholder { height: 100%; display: grid; place-items: center; text-align: center; color: #9bad9d; font-weight: 800; line-height: 1.8; }
-.preview-overlay { position: absolute; top: 16px; left: 16px; right: 16px; padding: 13px 14px; display: flex; flex-direction: column; gap: 4px; border-left: 5px solid #ffd43b; border-radius: 4px 12px 12px 4px; background: rgba(255,255,255,.86); color: #173b2b; }
-.preview-overlay strong { font-size: .85rem; }
-.preview-overlay span { color: #17804a; font-size: .72rem; font-weight: 800; }
-.preview-footer { position: absolute; bottom: 16px; left: 16px; right: 16px; padding: 12px; border-radius: 10px; background: rgba(23,59,43,.9); color: #fff; font-size: .68rem; font-weight: 900; letter-spacing: .08em; }
+.postcard-caption { margin-top: 8%; color: #173b2b; font-size: clamp(.7rem, 2.8vw, 1.05rem); font-weight: 900; letter-spacing: .06em; }
+.postcard-subcaption { margin-top: 3%; color: #17804a; font-family: Georgia, serif; font-size: clamp(.55rem, 1.8vw, .76rem); font-style: italic; }
+.template-sunshine .postcard-paper { background: #fffdf4; }
+.template-sunshine .postcard-top-line, .template-sunshine .postcard-photo-frame { border-color: #f4b400; background: #fff8df; }
+.template-sunshine .postcard-top-line { background: #f4b400; }
+.template-sunshine .postcard-header span, .template-sunshine .postcard-subcaption { color: #b87c00; }
+.template-green-pop .postcard-paper { background: #fff; }
+.template-green-pop .postcard-top-line, .template-green-pop .postcard-photo-frame { border-color: #17804a; }
+.template-tropical .postcard-paper { background: #fff9fb; }
+.template-tropical .postcard-top-line, .template-tropical .postcard-photo-frame { border-color: #e84576; }
+.template-tropical .postcard-header span, .template-tropical .postcard-subcaption { color: #e84576; }
+.template-school-day .postcard-paper { background: #f8feff; }
+.template-school-day .postcard-top-line, .template-school-day .postcard-photo-frame { border-color: #1967a3; }
+.template-school-day .postcard-header span, .template-school-day .postcard-subcaption { color: #1967a3; }
+.template-confetti .postcard-paper { background: #fcf9ff; }
+.template-confetti .postcard-top-line, .template-confetti .postcard-photo-frame { border-color: #8b5cf6; }
+.template-confetti .postcard-header span, .template-confetti .postcard-subcaption { color: #8b5cf6; }
+.offscreen-canvas { position: fixed; left: -9999px; top: -9999px; }
+.save-button { width: 100%; margin-top: 14px; min-height: 50px; border-radius: 15px; background: #ffd43b; color: #173b2b; font-weight: 900; }
+.save-button:disabled { cursor: not-allowed; opacity: .45; }
+.status-message { min-height: 22px; margin: 12px 0 0; color: #718074; font-size: .75rem; text-align: center; }
+.drive-link, .queue-button { display: block; margin: 8px auto 0; color: #17804a; font-size: .75rem; text-align: center; font-weight: 800; background: none; }
+.queue-button { color: #bd7310; }
+footer { position: absolute; bottom: 16px; left: 16px; right: 16px; padding: 12px; border-radius: 10px; background: rgba(23,59,43,.9); color: #fff; font-size: .68rem; font-weight: 900; letter-spacing: .08em; }
 .offscreen-canvas { position: fixed; left: -9999px; top: -9999px; }
 .save-button { width: 100%; margin-top: 14px; min-height: 50px; border-radius: 15px; background: #ffd43b; color: #173b2b; font-weight: 900; }
 .save-button:disabled { cursor: not-allowed; opacity: .45; }
