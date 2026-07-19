@@ -92,13 +92,12 @@ button { cursor: pointer; border: 0; }
 .status-message { min-height: 22px; margin: 12px 0 0; color: #718074; font-size: .75rem; text-align: center; }
 .drive-link, .queue-button { display: block; margin: 8px auto 0; color: #17804a; font-size: .75rem; text-align: center; font-weight: 800; background: none; }
 .queue-button { color: #bd7310; }
-footer { position: absolute; bottom: 16px; left: 16px; right: 16px; padding: 12px; border-radius: 10px; background: rgba(23,59,43,.9); color: #fff; font-size: .68rem; font-weight: 900; letter-spacing: .08em; }
+footer { padding: 35px 0 0; color: #95a197; font-size: .72rem; text-align: center; }
 .offscreen-canvas { position: fixed; left: -9999px; top: -9999px; }
 .save-button { width: 100%; margin-top: 14px; min-height: 50px; border-radius: 15px; background: #ffd43b; color: #173b2b; font-weight: 900; }
 .save-button:disabled { cursor: not-allowed; opacity: .45; }
 .status-message { min-height: 22px; margin: 12px 0 0; color: #718074; font-size: .75rem; text-align: center; }
 .drive-link, .queue-button { display: block; margin: 8px auto 0; color: #17804a; font-size: .75rem; text-align: center; font-weight: 800; background: none; }
 .queue-button { color: #bd7310; }
-footer { padding: 35px 0 0; color: #95a197; font-size: .72rem; text-align: center; }
 @media (max-width: 1050px) { .workspace { grid-template-columns: 1fr 1fr; } .preview-panel { grid-column: span 2; max-width: 420px; width: 100%; justify-self: center; } }
 @media (max-width: 680px) { .app-shell { padding: 18px 14px 26px; } .hero { margin: 35px 0 25px; grid-template-columns: 1fr; } .hero-card { width: 180px; justify-self: end; } .workspace { grid-template-columns: 1fr; } .preview-panel { grid-column: auto; max-width: none; } .panel { padding: 17px; } .camera-stage { min-height: 285px; } .camera-stage video { min-height: 285px; } }
