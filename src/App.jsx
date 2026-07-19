@@ -470,7 +470,10 @@ function App() {
           <div className="template-grid">
             {templates.map((item) => (
               <button key={item.id} className={"template-option " + item.className + (item.id === templateId ? " selected" : "")} onClick={() => { setTemplateId(item.id); setActiveStep(2); }}>
-                <span>RYTC</span><small>{item.name}</small>
+                <span className="template-mini-brand">RYTC</span>
+                <span className="template-mini-photo" />
+                <strong className="template-mini-title">{item.name}</strong>
+                <span className="template-mini-date">{today()}</span>
               </button>
             ))}
           </div>
