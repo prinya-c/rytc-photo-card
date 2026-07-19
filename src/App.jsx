@@ -83,8 +83,19 @@ async function uploadItem(item) {
       base64: item.dataUrl.split(",")[1]
     })
   });
-  if (!response.ok) throw new Error("อัปโหลดไม่สำเร็จ (" + response.status + ")");
-  const result = await response.json();
+  const responseText = await response.text();
+  let result;
+  try {
+    result = JSON.parse(responseText);
+  } catch {
+    const detail = responseText.replace(/<[^>]*>/g, " ").replace(/\\s+/g, " ").trim().slice(0, 180);
+    throw new Error(
+      "Apps Script ตอบกลับไม่ใช่ JSON" +
+      (response.status ? " (HTTP " + response.status + ")" : "") +
+      (detail ? ": " + detail : "")
+    );
+  }
+  if (!response.ok) throw new Error(result.message || "อัปโหลดไม่สำเร็จ (HTTP " + response.status + ")");
   if (!result.success) throw new Error(result.message || "Google Drive ปฏิเสธการอัปโหลด");
   return result;
 }
@@ -148,11 +159,19 @@ function App() {
 
   async function retryQueue() {
     const items = await pendingUploads();
+    let lastError = null;
     for (const item of items) {
-      try { await uploadItem(item); await removeUpload(item.requestId); } catch { break; }
+      try {
+        await uploadItem(item);
+        await removeUpload(item.requestId);
+      } catch (error) {
+        lastError = error;
+        break;
+      }
     }
     await refreshQueue();
-    if (items.length) setStatus("ตรวจสอบคิวอัปโหลดแล้ว");
+    if (lastError) setStatus("อัปโหลดไม่สำเร็จ: " + lastError.message);
+    else if (items.length) setStatus("ตรวจสอบคิวอัปโหลดแล้ว");
   }
 
   function setImageFromFile(file) {
@@ -373,9 +392,9 @@ function App() {
           const result = await uploadItem(item);
           setLastUrl(result.viewUrl || "");
           setStatus("บันทึกลงเครื่องและ Google Drive แล้ว");
-        } catch {
+        } catch (error) {
           await queueUpload(item);
-          setStatus("บันทึกลงเครื่องแล้ว รออัปโหลดไป Google Drive");
+          setStatus("บันทึกลงเครื่องแล้ว แต่ส่ง Google Drive ไม่สำเร็จ: " + error.message);
         }
       } else {
         await queueUpload(item);
