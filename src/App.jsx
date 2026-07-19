@@ -199,6 +199,14 @@ function App() {
     return colors[selected.id] || colors.sunshine;
   }
 
+  function drawLogoContain(ctx, logo, x, y, maxWidth, maxHeight) {
+    if (!logo.naturalWidth) return;
+    const scale = Math.min(maxWidth / logo.naturalWidth, maxHeight / logo.naturalHeight);
+    const width = logo.naturalWidth * scale;
+    const height = logo.naturalHeight * scale;
+    ctx.drawImage(logo, x + (maxWidth - width) / 2, y + (maxHeight - height) / 2, width, height);
+  }
+
   async function renderPostcard() {
     if (!imageSrc) throw new Error("กรุณาถ่ายภาพหรือเลือกรูปก่อน");
     const canvas = canvasRef.current;
@@ -218,7 +226,7 @@ function App() {
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       ctx.fillStyle = "#f4b400";
       ctx.fillRect(0, 0, CANVAS_WIDTH, 24);
-      if (logo.naturalWidth) ctx.drawImage(logo, 530, 65, 140, 72);
+      if (logo.naturalWidth) drawLogoContain(ctx, logo, 500, 55, 200, 95);
       ctx.fillStyle = "#4c3510";
       ctx.font = "700 54px Georgia, serif";
       ctx.fillText("วิทยาลัยเทคนิคระยอง", 600, 200);
@@ -240,7 +248,7 @@ function App() {
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       ctx.fillStyle = "#17804a";
       ctx.fillRect(0, 0, 260, CANVAS_HEIGHT);
-      if (logo.naturalWidth) ctx.drawImage(logo, 55, 105, 150, 80);
+      if (logo.naturalWidth) drawLogoContain(ctx, logo, 35, 90, 190, 100);
       ctx.save();
       ctx.translate(130, 940);
       ctx.rotate(-Math.PI / 2);
@@ -271,7 +279,7 @@ function App() {
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       ctx.fillStyle = "#e84576";
       ctx.fillRect(0, 0, CANVAS_WIDTH, 180);
-      if (logo.naturalWidth) ctx.drawImage(logo, 80, 58, 120, 64);
+      if (logo.naturalWidth) drawLogoContain(ctx, logo, 55, 45, 170, 85);
       ctx.textAlign = "left";
       ctx.fillStyle = "#fff";
       ctx.font = "800 42px sans-serif";
@@ -300,7 +308,7 @@ function App() {
       ctx.fillText("RYTC", 90, 115);
       ctx.font = "700 34px sans-serif";
       ctx.fillText("วิทยาลัยเทคนิคระยอง", 90, 180);
-      if (logo.naturalWidth) ctx.drawImage(logo, 940, 70, 150, 90);
+      if (logo.naturalWidth) drawLogoContain(ctx, logo, 900, 55, 210, 110);
       drawCover(ctx, image, 135, 340, 930, 1050, zoom);
       ctx.strokeStyle = "#1967a3";
       ctx.lineWidth = 5;
@@ -323,7 +331,7 @@ function App() {
       ctx.textAlign = "center";
       ctx.font = "900 76px Georgia, serif";
       ctx.fillText("HELLO!", 600, 150);
-      if (logo.naturalWidth) ctx.drawImage(logo, 540, 195, 120, 65);
+      if (logo.naturalWidth) drawLogoContain(ctx, logo, 500, 180, 200, 85);
       ctx.font = "700 30px sans-serif";
       ctx.fillStyle = "#8b5cf6";
       ctx.fillText(today(), 600, 290);
