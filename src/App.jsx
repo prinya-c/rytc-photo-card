@@ -72,7 +72,7 @@ function dataUrlToBlob(dataUrl) {
 }
 
 async function uploadItem(item) {
-  if (!UPLOAD_ENDPOINT) return { queued: true };
+  if (!UPLOAD_ENDPOINT) throw new Error("ยังไม่ได้ตั้งค่า Google Apps Script Upload API");
   const response = await fetch(UPLOAD_ENDPOINT, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
