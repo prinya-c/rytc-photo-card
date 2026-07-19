@@ -519,7 +519,8 @@ function App() {
 
         <div className={"panel step-panel step-panel-2 " + (activeStep === 2 ? "active" : "")}>
           <div className="section-heading"><span className="step-number">02</span><div><h3>เพิ่มรูปภาพ</h3><p>ใช้กล้องหรือเลือกรูปจากเครื่อง</p></div></div>
-          <div className={"camera-stage " + (imageSrc ? "has-image" : "")} style={imageSrc ? { backgroundImage: "url(" + imageSrc + ")", backgroundSize: (zoom * 100) + "% auto" } : {}}>
+          <div className={"camera-stage " + (imageSrc ? "has-image" : "")}>
+            {imageSrc && <div className="camera-image-layer" style={{ backgroundImage: "url(" + imageSrc + ")", backgroundSize: (zoom * 100) + "% auto", filter: getFilterStyle(filterId, filterIntensity) }} />}
             {!imageSrc && !cameraOpen && <div className="empty-camera"><div className="camera-icon">⌾</div><strong>ยังไม่มีรูปภาพ</strong><span>กดเปิดกล้อง หรือเลือกรูปจากเครื่อง</span></div>}
             {cameraOpen && <video ref={videoRef} autoPlay playsInline muted />}
             {imageSrc && <img ref={imageRef} src={imageSrc} alt="ภาพที่เลือก" className="hidden-image" />}
