@@ -18,6 +18,37 @@ const templates = [
   { id: "confetti", name: "Confetti", className: "template-confetti", accent: "#8b5cf6" }
 ];
 
+
+const filters = [
+  { id: "original", name: "ต้นฉบับ", emoji: "◌" },
+  { id: "bright", name: "หน้าใส", emoji: "✦" },
+  { id: "clear", name: "คมชัด", emoji: "◈" },
+  { id: "soft-skin", name: "ผิวนุ่ม", emoji: "◒" },
+  { id: "smooth", name: "บิวตี้", emoji: "♡" },
+  { id: "warm", name: "ผิวอุ่น", emoji: "☀" },
+  { id: "fresh", name: "สดใส", emoji: "✿" },
+  { id: "peach", name: "พีช", emoji: "●" },
+  { id: "cool", name: "โทนเย็น", emoji: "◆" },
+  { id: "mono", name: "ขาวดำ", emoji: "◐" }
+];
+
+function getFilterStyle(id, intensity = 100) {
+  const t = intensity / 100;
+  const styles = {
+    original: "none",
+    bright: `brightness(${1 + 0.2 * t}) saturate(${1 + 0.08 * t})`,
+    clear: `contrast(${1 + 0.25 * t}) saturate(${1 + 0.1 * t})`,
+    "soft-skin": `brightness(${1 + 0.08 * t}) contrast(${1 - 0.05 * t}) saturate(${1 + 0.04 * t})`,
+    smooth: `blur(${0.45 * t}px) brightness(${1 + 0.1 * t}) saturate(${1 + 0.05 * t})`,
+    warm: `sepia(${0.16 * t}) saturate(${1 + 0.14 * t}) brightness(${1 + 0.04 * t})`,
+    fresh: `saturate(${1 + 0.32 * t}) brightness(${1 + 0.06 * t}) contrast(${1 + 0.04 * t})`,
+    peach: `sepia(${0.2 * t}) hue-rotate(${-8 * t}deg) saturate(${1 + 0.22 * t}) brightness(${1 + 0.06 * t})`,
+    cool: `hue-rotate(${12 * t}deg) saturate(${1 + 0.08 * t}) brightness(${1 + 0.03 * t})`,
+    mono: `grayscale(${t}) contrast(${1 + 0.08 * t})`
+  };
+  return styles[id] || styles.original;
+}
+
 const today = () => new Date().toISOString().slice(0, 10);
 const timestamp = () => new Date().toISOString().replace(/[-:TZ.]/g, "").slice(0, 14);
 const fileName = () => "RYTC-Photo-" + timestamp() + ".png";
@@ -113,6 +144,8 @@ function App() {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [facingMode, setFacingMode] = useState("environment");
   const [zoom, setZoom] = useState(1);
+  const [filterId, setFilterId] = useState("original");
+  const [filterIntensity, setFilterIntensity] = useState(100);
   const [status, setStatus] = useState("พร้อมสร้าง Photo Card");
   const [busy, setBusy] = useState(false);
   const [queueCount, setQueueCount] = useState(0);
@@ -203,7 +236,7 @@ function App() {
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => { setImageSrc(reader.result); setZoom(1); setActiveStep(3); setStatus("เลือกรูปภาพแล้ว ปรับภาพได้ตามต้องการ"); };
+    reader.onload = () => { setImageSrc(reader.result); setZoom(1); setFilterId("original"); setFilterIntensity(100); setActiveStep(2); setStatus("เลือกรูปภาพแล้ว ปรับภาพได้ตามต้องการ"); };
     reader.readAsDataURL(file);
   }
 
@@ -215,12 +248,14 @@ function App() {
     canvas.height = video.videoHeight;
     canvas.getContext("2d").drawImage(video, 0, 0);
     setImageSrc(canvas.toDataURL("image/jpeg", 0.92));
-    setActiveStep(3);
+    setFilterId("original");
+    setFilterIntensity(100);
+    setActiveStep(2);
     setStatus("ถ่ายภาพแล้ว");
     stopCamera();
   }
 
-  function drawCover(ctx, image, x, y, width, height, scale = 1) {
+  function drawCover(ctx, image, x, y, width, height, scale = 1, filter = "none") {
     const ratio = Math.max(width / image.width, height / image.height) * scale;
     const drawWidth = image.width * ratio;
     const drawHeight = image.height * ratio;
@@ -228,6 +263,7 @@ function App() {
     ctx.beginPath();
     ctx.rect(x, y, width, height);
     ctx.clip();
+    ctx.filter = filter;
     ctx.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
     ctx.restore();
   }
@@ -258,6 +294,7 @@ function App() {
     const image = imageRef.current;
     const selected = templates.find((item) => item.id === templateId);
     const colors = templateColors(selected);
+    const imageFilter = getFilterStyle(filterId, filterIntensity);
     const logo = new Image();
     logo.crossOrigin = "anonymous";
     await new Promise((resolve) => { logo.onload = resolve; logo.onerror = resolve; logo.src = LOGO_EXPORT_URL; });
@@ -277,7 +314,7 @@ function App() {
       ctx.font = "italic 32px Georgia, serif";
       ctx.fillStyle = "#b87c00";
       ctx.fillText(today(), 600, 250);
-      drawCover(ctx, image, 115, 320, 970, 1160, zoom);
+      drawCover(ctx, image, 115, 320, 970, 1160, zoom, imageFilter);
       ctx.strokeStyle = "#f4b400";
       ctx.lineWidth = 8;
       ctx.strokeRect(105, 310, 990, 1180);
@@ -307,7 +344,7 @@ function App() {
       ctx.font = "700 30px sans-serif";
       ctx.fillStyle = "#17804a";
       ctx.fillText(today(), 330, 175);
-      drawCover(ctx, image, 330, 260, 760, 1040, zoom);
+      drawCover(ctx, image, 330, 260, 760, 1040, zoom, imageFilter);
       ctx.strokeStyle = "#17804a";
       ctx.lineWidth = 12;
       ctx.strokeRect(315, 245, 790, 1070);
@@ -330,7 +367,7 @@ function App() {
       ctx.fillText("RYTC", 240, 95);
       ctx.font = "700 32px sans-serif";
       ctx.fillText(today(), 240, 140);
-      drawCover(ctx, image, 100, 260, 1000, 1120, zoom);
+      drawCover(ctx, image, 100, 260, 1000, 1120, zoom, imageFilter);
       ctx.strokeStyle = "#e84576";
       ctx.lineWidth = 7;
       ctx.strokeRect(88, 248, 1024, 1144);
@@ -353,7 +390,7 @@ function App() {
       ctx.font = "700 34px sans-serif";
       ctx.fillText("วิทยาลัยเทคนิคระยอง", 90, 180);
       if (logo.naturalWidth) drawLogoContain(ctx, logo, 900, 55, 210, 110);
-      drawCover(ctx, image, 135, 340, 930, 1050, zoom);
+      drawCover(ctx, image, 135, 340, 930, 1050, zoom, imageFilter);
       ctx.strokeStyle = "#1967a3";
       ctx.lineWidth = 5;
       ctx.strokeRect(125, 330, 950, 1070);
@@ -384,7 +421,7 @@ function App() {
       ctx.rotate(-0.025);
       ctx.fillStyle = "#fff";
       ctx.fillRect(-500, -570, 1000, 1140);
-      drawCover(ctx, image, -430, -500, 860, 900, zoom);
+      drawCover(ctx, image, -430, -500, 860, 900, zoom, imageFilter);
       ctx.strokeStyle = "#8b5cf6";
       ctx.lineWidth = 8;
       ctx.strokeRect(-440, -510, 880, 920);
@@ -491,9 +528,19 @@ function App() {
           <div className="control-row">
             <button className="primary-button" onClick={() => startCamera()}>{cameraOpen ? "เปิดกล้องอีกครั้ง" : "เปิดกล้อง"}</button>
             <label className="secondary-button">เลือกรูป<input type="file" accept="image/*" onChange={(event) => setImageFromFile(event.target.files[0])} /></label>
-            {imageSrc && <button className="secondary-button" onClick={() => { setImageSrc(""); setZoom(1); }}>ถ่ายใหม่</button>}
+            {imageSrc && <button className="secondary-button" onClick={() => { setImageSrc(""); setZoom(1); setFilterId("original"); setFilterIntensity(100); }}>ถ่ายใหม่</button>}
           </div>
           {imageSrc && <div className="zoom-control"><span>ซูม</span><input type="range" min="1" max="2.5" step=".05" value={zoom} onChange={(event) => setZoom(Number(event.target.value))} /><strong>{zoom.toFixed(1)}x</strong></div>}
+          {imageSrc && <div className="filter-editor">
+            <div className="filter-heading"><strong>แต่งภาพ</strong><span>{filters.find((item) => item.id === filterId)?.name}</span></div>
+            <div className="filter-strip">
+              {filters.map((item) => <button key={item.id} className={filterId === item.id ? "filter-chip active" : "filter-chip"} onClick={() => setFilterId(item.id)}>
+                <span className="filter-chip-preview" style={{ filter: getFilterStyle(item.id, filterIntensity) }}>{item.emoji}</span>
+                <small>{item.name}</small>
+              </button>)}
+            </div>
+            {filterId !== "original" && <div className="filter-intensity"><span>ความแรง</span><input type="range" min="0" max="100" value={filterIntensity} onChange={(event) => setFilterIntensity(Number(event.target.value))} /><strong>{filterIntensity}%</strong></div>}
+          </div>}
           <div className="step-actions"><button className="secondary-button" onClick={() => setActiveStep(1)}>← เปลี่ยน Template</button><button className="primary-button" disabled={!imageSrc} onClick={() => setActiveStep(3)}>ต่อไป: ตรวจสอบ →</button></div>
         </div>
 
@@ -509,7 +556,7 @@ function App() {
                 <span>{today()}</span>
               </div>
               <div className="postcard-photo-frame">
-                {imageSrc ? <img src={imageSrc} alt="ตัวอย่าง Photo Card" style={{ transform: "scale(" + zoom + ")" }} /> : <div className="preview-placeholder">ภาพตัวอย่าง<br />จะปรากฏที่นี่</div>}
+                {imageSrc ? <img src={imageSrc} alt="ตัวอย่าง Photo Card" style={{ transform: "scale(" + zoom + ")", filter: getFilterStyle(filterId, filterIntensity) }} /> : <div className="preview-placeholder">ภาพตัวอย่าง<br />จะปรากฏที่นี่</div>}
               </div>
               <div className="postcard-caption">RYTC PHOTO CARD</div>
               <div className="postcard-subcaption">Rayong Technical College</div>
