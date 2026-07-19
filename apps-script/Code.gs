@@ -1,4 +1,7 @@
 const CONFIG = {
+  // ใส่ Folder ID ของ Google Drive ได้โดยตรงที่บรรทัดนี้
+  folderId: "1X7D4D4veViIDnCojccj4GLyvhRX9GOa-",
+  // ใช้เป็นทางเลือก หากต้องการเก็บ ID ไว้ใน Script Properties
   folderProperty: "DRIVE_FOLDER_ID",
   maxBytes: 8 * 1024 * 1024,
   requestPrefix: "RYTC_UPLOADED_"
@@ -24,8 +27,8 @@ function doPost(event) {
       });
     }
 
-    const folderId = properties.getProperty(CONFIG.folderProperty);
-    if (!folderId) throw new Error("ยังไม่ได้ตั้งค่า DRIVE_FOLDER_ID");
+    const folderId = CONFIG.folderId || properties.getProperty(CONFIG.folderProperty);
+    if (!folderId) throw new Error("ยังไม่ได้ตั้งค่า Google Drive Folder ID");
 
     const bytes = Utilities.base64Decode(body.base64);
     if (bytes.length > CONFIG.maxBytes) throw new Error("ไฟล์มีขนาดใหญ่เกินกำหนด");
