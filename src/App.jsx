@@ -3,7 +3,7 @@ import packageJson from "../package.json";
 
 const APP_VERSION = "v" + packageJson.version;
 const LOGO_URL = "https://resume.rytc.ac.th/assets/rytc_logo-DMbLvb1_.png";
-const LOGO_EXPORT_URL = (import.meta.env.BASE_URL || "/") + "assets/rytc-logo.svg?v=2";
+const LOGO_EXPORT_URL = LOGO_URL;
 const UPLOAD_ENDPOINT = import.meta.env.VITE_UPLOAD_ENDPOINT || "";
 const CANVAS_WIDTH = 1200;
 const CANVAS_HEIGHT = 1800;
