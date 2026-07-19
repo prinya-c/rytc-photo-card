@@ -4,7 +4,18 @@ import { registerSW } from "virtual:pwa-register";
 import App from "./App";
 import "./styles.css";
 
-registerSW({ immediate: true });
+let updateSW;
+updateSW = registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    if (window.__RYTC_CAN_UPDATE !== false) {
+      updateSW?.(true);
+    } else {
+      window.dispatchEvent(new CustomEvent("rytc-update-available"));
+    }
+  }
+});
+window.__RYTC_UPDATE_SW = () => updateSW?.(true);
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
