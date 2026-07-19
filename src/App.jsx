@@ -121,13 +121,19 @@ function App() {
         audio: false
       });
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
       setCameraOpen(true);
       setStatus("กล้องพร้อมถ่ายภาพ");
     } catch (error) {
       setStatus(error.name === "NotAllowedError" ? "กรุณาอนุญาตการใช้กล้องใน Browser" : "ไม่สามารถเปิดกล้องได้");
     }
   }, [facingMode, stopCamera]);
+
+  useEffect(() => {
+    if (cameraOpen && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [cameraOpen]);
 
   useEffect(() => {
     refreshQueue();
@@ -282,7 +288,7 @@ function App() {
             {!imageSrc && !cameraOpen && <div className="empty-camera"><div className="camera-icon">⌾</div><strong>ยังไม่มีรูปภาพ</strong><span>กดเปิดกล้อง หรือเลือกรูปจากเครื่อง</span></div>}
             {cameraOpen && <video ref={videoRef} autoPlay playsInline muted />}
             {imageSrc && <img ref={imageRef} src={imageSrc} alt="ภาพที่เลือก" className="hidden-image" />}
-            {cameraOpen && <div className="camera-actions"><button className="primary-button" onClick={capturePhoto}>ถ่ายภาพ</button><button className="ghost-button" onClick={stopCamera}>ปิดกล้อง</button></div>}
+            {cameraOpen && <div className="camera-actions"><button className="primary-button" onClick={capturePhoto}>ถ่ายภาพ</button><button className="ghost-button" onClick={() => { const next = facingMode === "environment" ? "user" : "environment"; setFacingMode(next); startCamera(next); }}>สลับกล้อง</button><button className="ghost-button" onClick={stopCamera}>ปิดกล้อง</button></div>}
           </div>
           <div className="control-row">
             <button className="primary-button" onClick={() => startCamera()}>{cameraOpen ? "เปิดกล้องอีกครั้ง" : "เปิดกล้อง"}</button>
