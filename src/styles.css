@@ -198,3 +198,51 @@ footer { padding: 35px 0 0; color: #95a197; font-size: .72rem; text-align: cente
   .status-message, .drive-link, .queue-button { font-size: .62rem; margin-top: 5px; }
   footer { flex: 0 0 auto; padding: 6px 0 0; font-size: .56rem; }
 }
+
+
+/* Template picker previews: show the actual postcard composition */
+.template-option { overflow: hidden; position: relative; }
+.template-option .template-mini-brand,
+.template-option .template-mini-photo,
+.template-option .template-mini-title,
+.template-option .template-mini-date { position: absolute; z-index: 1; display: block; }
+.template-option .template-mini-brand { top: 10px; left: 12px; font-size: .58rem; letter-spacing: .14em; font-weight: 900; }
+.template-option .template-mini-photo { background: rgba(255,255,255,.88); border: 2px solid rgba(255,255,255,.75); }
+.template-option .template-mini-title { font-size: .62rem; font-weight: 900; }
+.template-option .template-mini-date { font-size: .46rem; font-weight: 800; opacity: .9; }
+
+/* Sunshine: centered logo/header, large framed photo, footer text */
+.template-sunshine .template-mini-photo { left: 18%; right: 18%; top: 30%; bottom: 19%; border-color: #fff; }
+.template-sunshine .template-mini-title { left: 12px; bottom: 8px; }
+.template-sunshine .template-mini-date { right: 12px; bottom: 9px; }
+
+/* Green Pop: strong vertical identity rail and offset photo */
+.template-green-pop .template-mini-brand { left: 10px; top: 30px; writing-mode: vertical-rl; transform: rotate(180deg); }
+.template-green-pop .template-mini-photo { left: 28%; right: 10%; top: 18%; bottom: 13%; border-radius: 0 10px 10px 0; }
+.template-green-pop .template-mini-title { left: 31%; bottom: 8px; }
+.template-green-pop .template-mini-date { left: 10px; bottom: 9px; }
+
+/* Tropical: bold top band and rounded tilted photo */
+.template-tropical .template-mini-brand { top: 8px; color: #fff; }
+.template-tropical .template-mini-photo { left: 12%; right: 12%; top: 25%; bottom: 18%; border: 0; border-radius: 9px; transform: rotate(-3deg); box-shadow: 4px 4px 0 rgba(255,255,255,.5); }
+.template-tropical .template-mini-title { left: 12px; bottom: 8px; }
+.template-tropical .template-mini-date { right: 12px; top: 9px; }
+
+/* School Day: blue header, logo block, square photo */
+.template-school-day .template-mini-brand { top: 8px; left: 10px; }
+.template-school-day .template-mini-photo { left: 15%; right: 15%; top: 28%; bottom: 12%; border-radius: 0; border: 3px solid rgba(255,255,255,.9); }
+.template-school-day .template-mini-title { left: 12px; bottom: 7px; }
+.template-school-day .template-mini-date { right: 12px; bottom: 9px; }
+
+/* Confetti: centered title and playful rotated photo */
+.template-confetti .template-mini-brand { top: 8px; left: 0; right: 0; text-align: center; }
+.template-confetti .template-mini-photo { left: 19%; right: 19%; top: 25%; bottom: 17%; transform: rotate(4deg); box-shadow: 5px 5px 0 rgba(255,255,255,.5); }
+.template-confetti .template-mini-title { left: 0; right: 0; bottom: 7px; text-align: center; }
+.template-confetti .template-mini-date { display: none; }
+
+@media (max-width: 680px) {
+  .template-option .template-mini-brand { top: 7px; left: 8px; font-size: .42rem; }
+  .template-option .template-mini-title { font-size: .48rem; }
+  .template-option .template-mini-date { font-size: .36rem; }
+  .template-option .template-mini-photo { border-width: 1px; }
+}
