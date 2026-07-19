@@ -26,6 +26,13 @@ jobs:
         with:
           node-version: 22
 
+      - name: Fetch original transparent logo
+        run: |
+          mkdir -p public/assets
+          curl --fail --location --silent --show-error \
+            https://resume.rytc.ac.th/assets/rytc_logo-DMbLvb1_.png \
+            --output public/assets/rytc-logo-original.png
+
       - name: Install dependencies
         run: npm install
 
