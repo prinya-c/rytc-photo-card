@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const LOGO_URL = "https://resume.rytc.ac.th/assets/rytc_logo-DMbLvb1_.png";
+const LOGO_URL = (import.meta.env.BASE_URL || "/") + "assets/rytc-logo.svg";
 const UPLOAD_ENDPOINT = import.meta.env.VITE_UPLOAD_ENDPOINT || "";
 const CANVAS_WIDTH = 1200;
 const CANVAS_HEIGHT = 1800;
