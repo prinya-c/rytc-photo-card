@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const LOGO_URL = (import.meta.env.BASE_URL || "/") + "assets/rytc-logo.svg";
+const LOGO_URL = "https://resume.rytc.ac.th/assets/rytc_logo-DMbLvb1_.png";
+const LOGO_EXPORT_URL = (import.meta.env.BASE_URL || "/") + "assets/rytc-logo.svg";
 const UPLOAD_ENDPOINT = import.meta.env.VITE_UPLOAD_ENDPOINT || "";
 const CANVAS_WIDTH = 1200;
 const CANVAS_HEIGHT = 1800;
@@ -216,7 +217,7 @@ function App() {
     const colors = templateColors(selected);
     const logo = new Image();
     logo.crossOrigin = "anonymous";
-    await new Promise((resolve) => { logo.onload = resolve; logo.onerror = resolve; logo.src = LOGO_URL; });
+    await new Promise((resolve) => { logo.onload = resolve; logo.onerror = resolve; logo.src = LOGO_EXPORT_URL; });
 
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     ctx.textAlign = "center";
@@ -446,7 +447,7 @@ function App() {
             <div className="postcard-paper">
               <div className="postcard-top-line" />
               <div className="postcard-kicker">RYTC PHOTO CARD</div>
-              <img className="postcard-logo" src={LOGO_URL} alt="โลโก้วิทยาลัยเทคนิคระยอง" crossOrigin="anonymous" />
+              <img className="postcard-logo" src={LOGO_URL} alt="โลโก้วิทยาลัยเทคนิคระยอง" />
               <div className="postcard-header">
                 <strong>วิทยาลัยเทคนิคระยอง</strong>
                 <span>{today()}</span>
