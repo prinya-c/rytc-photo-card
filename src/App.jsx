@@ -108,6 +108,7 @@ function App() {
   const streamRef = useRef(null);
   const canvasRef = useRef(null);
   const [templateId, setTemplateId] = useState(templates[0].id);
+  const [activeStep, setActiveStep] = useState(1);
   const [imageSrc, setImageSrc] = useState("");
   const [cameraOpen, setCameraOpen] = useState(false);
   const [facingMode, setFacingMode] = useState("environment");
@@ -202,7 +203,7 @@ function App() {
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => { setImageSrc(reader.result); setZoom(1); setStatus("เลือกรูปภาพแล้ว ปรับภาพได้ตามต้องการ"); };
+    reader.onload = () => { setImageSrc(reader.result); setZoom(1); setActiveStep(3); setStatus("เลือกรูปภาพแล้ว ปรับภาพได้ตามต้องการ"); };
     reader.readAsDataURL(file);
   }
 
@@ -214,6 +215,7 @@ function App() {
     canvas.height = video.videoHeight;
     canvas.getContext("2d").drawImage(video, 0, 0);
     setImageSrc(canvas.toDataURL("image/jpeg", 0.92));
+    setActiveStep(3);
     setStatus("ถ่ายภาพแล้ว");
     stopCamera();
   }
@@ -454,19 +456,28 @@ function App() {
         </div>
       </section>
 
+      <nav className="stepper" aria-label="ขั้นตอนการสร้าง Photo Card">
+        {[["01", "แบบ", 1], ["02", "รูปภาพ", 2], ["03", "บันทึก", 3]].map(([number, label, step]) => (
+          <button key={step} className={activeStep === step ? "active" : ""} onClick={() => setActiveStep(step)}>
+            <span>{number}</span><b>{label}</b>
+          </button>
+        ))}
+      </nav>
+
       <section className="workspace">
-        <div className="panel">
+        <div className={"panel step-panel step-panel-1 " + (activeStep === 1 ? "active" : "")}>
           <div className="section-heading"><span className="step-number">01</span><div><h3>เลือก Template</h3><p>เลือกดีไซน์ที่เข้ากับภาพของคุณ</p></div></div>
           <div className="template-grid">
             {templates.map((item) => (
-              <button key={item.id} className={"template-option " + item.className + (item.id === templateId ? " selected" : "")} onClick={() => setTemplateId(item.id)}>
+              <button key={item.id} className={"template-option " + item.className + (item.id === templateId ? " selected" : "")} onClick={() => { setTemplateId(item.id); setActiveStep(2); }}>
                 <span>RYTC</span><small>{item.name}</small>
               </button>
             ))}
           </div>
+          <div className="step-actions"><button className="primary-button" onClick={() => setActiveStep(2)}>ต่อไป: เพิ่มรูปภาพ →</button></div>
         </div>
 
-        <div className="panel">
+        <div className={"panel step-panel step-panel-2 " + (activeStep === 2 ? "active" : "")}>
           <div className="section-heading"><span className="step-number">02</span><div><h3>เพิ่มรูปภาพ</h3><p>ใช้กล้องหรือเลือกรูปจากเครื่อง</p></div></div>
           <div className={"camera-stage " + (imageSrc ? "has-image" : "")} style={imageSrc ? { backgroundImage: "url(" + imageSrc + ")", backgroundSize: (zoom * 100) + "% auto" } : {}}>
             {!imageSrc && !cameraOpen && <div className="empty-camera"><div className="camera-icon">⌾</div><strong>ยังไม่มีรูปภาพ</strong><span>กดเปิดกล้อง หรือเลือกรูปจากเครื่อง</span></div>}
@@ -480,9 +491,10 @@ function App() {
             {imageSrc && <button className="secondary-button" onClick={() => { setImageSrc(""); setZoom(1); }}>ถ่ายใหม่</button>}
           </div>
           {imageSrc && <div className="zoom-control"><span>ซูม</span><input type="range" min="1" max="2.5" step=".05" value={zoom} onChange={(event) => setZoom(Number(event.target.value))} /><strong>{zoom.toFixed(1)}x</strong></div>}
+          <div className="step-actions"><button className="secondary-button" onClick={() => setActiveStep(1)}>← เปลี่ยน Template</button><button className="primary-button" disabled={!imageSrc} onClick={() => setActiveStep(3)}>ต่อไป: ตรวจสอบ →</button></div>
         </div>
 
-        <div className="panel preview-panel">
+        <div className={"panel preview-panel step-panel step-panel-3 " + (activeStep === 3 ? "active" : "")}>
           <div className="section-heading"><span className="step-number">03</span><div><h3>บันทึก Photo Card</h3><p>ตรวจสอบภาพก่อนบันทึกเป็น PNG</p></div></div>
           <div className={"postcard-preview " + selectedTemplate.className}>
             <div className="postcard-paper">
