@@ -151,3 +151,50 @@ footer { padding: 35px 0 0; color: #95a197; font-size: .72rem; text-align: cente
 .template-tropical .postcard-logo { width: 25%; }
 .template-school-day .postcard-logo { width: 28%; }
 .template-confetti .postcard-logo { width: 25%; left: 37%; }
+
+
+.stepper { display: none; }
+.step-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.step-actions button:disabled { opacity: .45; cursor: not-allowed; }
+
+@media (max-width: 680px) {
+  body { overflow: hidden; }
+  .app-shell { height: 100dvh; min-height: 560px; overflow: hidden; display: flex; flex-direction: column; padding: 10px 12px 8px; }
+  .topbar { min-height: 38px; gap: 8px; }
+  .brand-mark { width: 34px; height: 34px; border-radius: 11px; box-shadow: 3px 3px 0 #ffd43b; font-size: .75rem; }
+  .topbar h1 { font-size: .85rem; }
+  .topbar .eyebrow { font-size: .48rem; letter-spacing: .1em; }
+  .online-pill { padding: 5px 8px; font-size: .58rem; }
+  .hero { display: none; }
+  .stepper { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 10px 0 8px; }
+  .stepper button { min-height: 38px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 12px; background: #eef6eb; color: #7d8d81; font-size: .68rem; }
+  .stepper button span { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 8px; background: #d7e8d4; font-size: .58rem; font-weight: 900; }
+  .stepper button b { font-weight: 800; }
+  .stepper button.active { background: #17804a; color: #fff; box-shadow: 0 3px 0 #ffd43b; }
+  .stepper button.active span { background: #ffd43b; color: #173b2b; }
+  .workspace { min-height: 0; flex: 1; display: block; }
+  .step-panel { display: none; height: 100%; overflow: hidden; padding: 14px; border-radius: 18px; }
+  .step-panel.active { display: flex; flex-direction: column; }
+  .step-panel .section-heading { margin-bottom: 10px; }
+  .step-panel .section-heading h3 { font-size: .9rem; }
+  .step-panel .section-heading p { font-size: .65rem; }
+  .template-grid { flex: 1; min-height: 0; grid-template-columns: repeat(2, 1fr); grid-auto-rows: minmax(72px, 1fr); gap: 8px; }
+  .template-option { min-height: 0; border-radius: 13px; padding: 9px; }
+  .template-option span { font-size: .55rem; }
+  .template-option small { font-size: .68rem; }
+  .camera-stage { flex: 1; min-height: 0; height: auto; max-height: calc(100dvh - 210px); border-radius: 16px; }
+  .camera-stage video { min-height: 0; height: 100%; }
+  .camera-actions { bottom: 14px; gap: 5px; }
+  .camera-actions button { min-height: 36px; padding: 0 10px; font-size: .66rem; }
+  .control-row { margin-top: 8px; }
+  .primary-button, .secondary-button, .ghost-button { min-height: 36px; padding: 0 11px; border-radius: 10px; font-size: .68rem; }
+  .zoom-control { margin-top: 8px; }
+  .step-actions { margin-top: 8px; justify-content: space-between; }
+  .step-actions button { min-height: 34px; padding: 0 9px; font-size: .65rem; }
+  .preview-panel { max-width: none; width: auto; }
+  .preview-panel .section-heading { flex: 0 0 auto; }
+  .postcard-preview { flex: 1; min-height: 0; height: auto; max-height: calc(100dvh - 190px); aspect-ratio: 2 / 3; width: auto; align-self: center; }
+  .save-button { flex: 0 0 auto; min-height: 40px; margin-top: 8px; font-size: .75rem; }
+  .status-message, .drive-link, .queue-button { font-size: .62rem; margin-top: 5px; }
+  footer { flex: 0 0 auto; padding: 6px 0 0; font-size: .56rem; }
+}
