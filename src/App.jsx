@@ -437,6 +437,8 @@ function App() {
           <div className={"postcard-preview " + selectedTemplate.className}>
             <div className="postcard-paper">
               <div className="postcard-top-line" />
+              <div className="postcard-kicker">RYTC PHOTO CARD</div>
+              <img className="postcard-logo" src={LOGO_URL} alt="โลโก้วิทยาลัยเทคนิคระยอง" crossOrigin="anonymous" />
               <div className="postcard-header">
                 <strong>วิทยาลัยเทคนิคระยอง</strong>
                 <span>{today()}</span>
