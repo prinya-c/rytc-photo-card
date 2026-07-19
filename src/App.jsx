@@ -176,11 +176,27 @@ function App() {
     stopCamera();
   }
 
-  function drawCover(ctx, image, width, height, scale = 1) {
+  function drawCover(ctx, image, x, y, width, height, scale = 1) {
     const ratio = Math.max(width / image.width, height / image.height) * scale;
     const drawWidth = image.width * ratio;
     const drawHeight = image.height * ratio;
-    ctx.drawImage(image, (width - drawWidth) / 2, (height - drawHeight) / 2, drawWidth, drawHeight);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, width, height);
+    ctx.clip();
+    ctx.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
+    ctx.restore();
+  }
+
+  function templateColors(selected) {
+    const colors = {
+      sunshine: { background: "#fff8df", paper: "#fffdf4", accent: "#f4b400", ink: "#4c3510" },
+      "green-pop": { background: "#edf8eb", paper: "#ffffff", accent: "#17804a", ink: "#173b2b" },
+      tropical: { background: "#fff0f3", paper: "#ffffff", accent: "#e84576", ink: "#5a1933" },
+      "school-day": { background: "#eaf6f8", paper: "#ffffff", accent: "#1967a3", ink: "#123b5b" },
+      confetti: { background: "#f6efff", paper: "#ffffff", accent: "#8b5cf6", ink: "#3b216b" }
+    };
+    return colors[selected.id] || colors.sunshine;
   }
 
   async function renderPostcard() {
@@ -189,29 +205,42 @@ function App() {
     const ctx = canvas.getContext("2d");
     const image = imageRef.current;
     const selected = templates.find((item) => item.id === templateId);
+    const colors = templateColors(selected);
+    const photo = { x: 120, y: 330, width: 960, height: 1120 };
+
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    ctx.fillStyle = "#fffdf4";
+    ctx.fillStyle = colors.background;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    drawCover(ctx, image, CANVAS_WIDTH, CANVAS_HEIGHT, zoom);
-    ctx.fillStyle = "rgba(255,255,255,.78)";
-    ctx.fillRect(50, 55, CANVAS_WIDTH - 100, 230);
-    ctx.fillStyle = selected.accent;
-    ctx.fillRect(50, 55, 18, 230);
-    ctx.fillStyle = "#173b2b";
+    ctx.fillStyle = colors.paper;
+    ctx.fillRect(72, 70, CANVAS_WIDTH - 144, CANVAS_HEIGHT - 140);
+
+    ctx.fillStyle = colors.accent;
+    ctx.fillRect(72, 70, CANVAS_WIDTH - 144, 22);
+    ctx.fillStyle = colors.ink;
+    ctx.textAlign = "center";
     ctx.font = "700 48px sans-serif";
-    ctx.fillText("วิทยาลัยเทคนิคระยอง", 105, 170);
+    ctx.fillText("วิทยาลัยเทคนิคระยอง", CANVAS_WIDTH / 2, 180);
     ctx.font = "700 34px sans-serif";
-    ctx.fillStyle = selected.accent;
-    ctx.fillText(today(), 105, 225);
-    ctx.fillStyle = "rgba(23,59,43,.92)";
-    ctx.fillRect(50, CANVAS_HEIGHT - 205, CANVAS_WIDTH - 100, 125);
-    ctx.fillStyle = "#fff";
-    ctx.font = "700 42px sans-serif";
-    ctx.fillText("RYTC PHOTO CARD", 90, CANVAS_HEIGHT - 125);
+    ctx.fillStyle = colors.accent;
+    ctx.fillText(today(), CANVAS_WIDTH / 2, 235);
+
+    ctx.strokeStyle = colors.accent;
+    ctx.lineWidth = 5;
+    ctx.strokeRect(photo.x - 8, photo.y - 8, photo.width + 16, photo.height + 16);
+    drawCover(ctx, image, photo.x, photo.y, photo.width, photo.height, zoom);
+
+    ctx.fillStyle = colors.ink;
+    ctx.font = "800 50px sans-serif";
+    ctx.fillText("RYTC PHOTO CARD", CANVAS_WIDTH / 2, 1580);
+    ctx.font = "italic 30px sans-serif";
+    ctx.fillStyle = colors.accent;
+    ctx.fillText("Rayong Technical College", CANVAS_WIDTH / 2, 1640);
+
     const logo = new Image();
     logo.crossOrigin = "anonymous";
     await new Promise((resolve) => { logo.onload = resolve; logo.onerror = resolve; logo.src = LOGO_URL; });
-    if (logo.naturalWidth) ctx.drawImage(logo, CANVAS_WIDTH - 235, 80, 130, 130);
+    if (logo.naturalWidth) ctx.drawImage(logo, CANVAS_WIDTH / 2 - 65, 255, 130, 60);
+    ctx.textAlign = "start";
     return canvas.toDataURL("image/png");
   }
 
