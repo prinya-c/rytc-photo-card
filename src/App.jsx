@@ -300,6 +300,8 @@ function App() {
     await new Promise((resolve) => { logo.onload = resolve; logo.onerror = resolve; logo.src = LOGO_EXPORT_URL; });
 
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
     ctx.textAlign = "center";
 
     if (selected.id === "sunshine") {
@@ -307,7 +309,7 @@ function App() {
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       ctx.fillStyle = "#f4b400";
       ctx.fillRect(0, 0, CANVAS_WIDTH, 24);
-      if (logo.naturalWidth) drawLogoContain(ctx, logo, 500, 55, 200, 95);
+      if (logo.naturalWidth) drawLogoContain(ctx, logo, 455, 45, 290, 125);
       ctx.fillStyle = "#4c3510";
       ctx.font = "700 54px Georgia, serif";
       ctx.fillText("วิทยาลัยเทคนิคระยอง", 600, 200);
@@ -329,7 +331,7 @@ function App() {
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       ctx.fillStyle = "#17804a";
       ctx.fillRect(0, 0, 260, CANVAS_HEIGHT);
-      if (logo.naturalWidth) drawLogoContain(ctx, logo, 35, 90, 190, 100);
+      if (logo.naturalWidth) drawLogoContain(ctx, logo, 25, 75, 260, 135);
       ctx.save();
       ctx.translate(130, 940);
       ctx.rotate(-Math.PI / 2);
@@ -360,7 +362,7 @@ function App() {
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       ctx.fillStyle = "#e84576";
       ctx.fillRect(0, 0, CANVAS_WIDTH, 180);
-      if (logo.naturalWidth) drawLogoContain(ctx, logo, 55, 45, 170, 85);
+      if (logo.naturalWidth) drawLogoContain(ctx, logo, 35, 30, 245, 120);
       ctx.textAlign = "left";
       ctx.fillStyle = "#fff";
       ctx.font = "800 42px sans-serif";
@@ -389,7 +391,7 @@ function App() {
       ctx.fillText("RYTC", 90, 115);
       ctx.font = "700 34px sans-serif";
       ctx.fillText("วิทยาลัยเทคนิคระยอง", 90, 180);
-      if (logo.naturalWidth) drawLogoContain(ctx, logo, 900, 55, 210, 110);
+      if (logo.naturalWidth) drawLogoContain(ctx, logo, 825, 40, 330, 145);
       drawCover(ctx, image, 135, 340, 930, 1050, zoom, imageFilter);
       ctx.strokeStyle = "#1967a3";
       ctx.lineWidth = 5;
@@ -412,7 +414,7 @@ function App() {
       ctx.textAlign = "center";
       ctx.font = "900 76px Georgia, serif";
       ctx.fillText("HELLO!", 600, 150);
-      if (logo.naturalWidth) drawLogoContain(ctx, logo, 500, 180, 200, 85);
+      if (logo.naturalWidth) drawLogoContain(ctx, logo, 450, 160, 300, 125);
       ctx.font = "700 30px sans-serif";
       ctx.fillStyle = "#8b5cf6";
       ctx.fillText(today(), 600, 290);
