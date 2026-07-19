@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import packageJson from "../package.json";
 
+const APP_VERSION = "v" + packageJson.version;
 const LOGO_URL = "https://resume.rytc.ac.th/assets/rytc_logo-DMbLvb1_.png";
 const LOGO_EXPORT_URL = (import.meta.env.BASE_URL || "/") + "assets/rytc-logo.svg?v=2";
 const UPLOAD_ENDPOINT = import.meta.env.VITE_UPLOAD_ENDPOINT || "";
@@ -114,6 +116,21 @@ function App() {
   const [busy, setBusy] = useState(false);
   const [queueCount, setQueueCount] = useState(0);
   const [lastUrl, setLastUrl] = useState("");
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+
+  useEffect(() => {
+    window.__RYTC_CAN_UPDATE = !busy && !cameraOpen;
+    if (!busy && !cameraOpen && updateAvailable) {
+      window.__RYTC_UPDATE_SW?.();
+      setUpdateAvailable(false);
+    }
+  }, [busy, cameraOpen, updateAvailable]);
+
+  useEffect(() => {
+    const onUpdateAvailable = () => setUpdateAvailable(true);
+    window.addEventListener("rytc-update-available", onUpdateAvailable);
+    return () => window.removeEventListener("rytc-update-available", onUpdateAvailable);
+  }, []);
 
   const refreshQueue = useCallback(async () => {
     try { setQueueCount((await pendingUploads()).length); } catch { setQueueCount(0); }
@@ -158,20 +175,25 @@ function App() {
   }, []);
 
   async function retryQueue() {
-    const items = await pendingUploads();
-    let lastError = null;
-    for (const item of items) {
-      try {
-        await uploadItem(item);
-        await removeUpload(item.requestId);
-      } catch (error) {
-        lastError = error;
-        break;
+    setBusy(true);
+    try {
+      const items = await pendingUploads();
+      let lastError = null;
+      for (const item of items) {
+        try {
+          await uploadItem(item);
+          await removeUpload(item.requestId);
+        } catch (error) {
+          lastError = error;
+          break;
+        }
       }
+      await refreshQueue();
+      if (lastError) setStatus("อัปโหลดไม่สำเร็จ: " + lastError.message);
+      else if (items.length) setStatus("ตรวจสอบคิวอัปโหลดแล้ว");
+    } finally {
+      setBusy(false);
     }
-    await refreshQueue();
-    if (lastError) setStatus("อัปโหลดไม่สำเร็จ: " + lastError.message);
-    else if (items.length) setStatus("ตรวจสอบคิวอัปโหลดแล้ว");
   }
 
   function setImageFromFile(file) {
@@ -481,12 +503,13 @@ function App() {
           <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="offscreen-canvas" />
           <button className="save-button" disabled={!imageSrc || busy} onClick={savePostcard}>{busy ? "กำลังบันทึก..." : "บันทึกเป็น PNG"}</button>
           <p className="status-message">{status}</p>
+          {updateAvailable && <p className="status-message">มีเวอร์ชันใหม่ ระบบจะอัปเดตเมื่อการใช้งานปัจจุบันเสร็จสิ้น</p>}
           {lastUrl && <a className="drive-link" href={lastUrl} target="_blank" rel="noreferrer">เปิดรูปจาก Google Drive ↗</a>}
           {queueCount > 0 && <button className="queue-button" onClick={retryQueue}>มีไฟล์รออัปโหลด {queueCount} รายการ · ลองอีกครั้ง</button>}
         </div>
       </section>
 
-      <footer>วิทยาลัยเทคนิคระยอง · RYTC Photo Card · ใช้งานได้ทุกอุปกรณ์</footer>
+      <footer>วิทยาลัยเทคนิคระยอง · RYTC Photo Card · ใช้งานได้ทุกอุปกรณ์ · {APP_VERSION}</footer>
     </main>
   );
 }
