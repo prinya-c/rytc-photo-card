@@ -421,3 +421,58 @@ footer { padding: 35px 0 0; color: #95a197; font-size: .72rem; text-align: cente
   .camera-shutter { width: 64px; height: 64px; }
   .camera-shutter span { width: 48px; height: 48px; }
 }
+
+
+/* Camera controls and vertical layout correction v0.6.1 */
+.camera-stage {
+  overflow: hidden;
+  position: relative;
+}
+.camera-actions {
+  position: absolute;
+  inset: auto 0 16px;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 4;
+}
+.camera-switch-button {
+  position: absolute;
+  top: auto;
+  left: 16px;
+  width: 44px;
+  height: 44px;
+  pointer-events: auto;
+}
+.camera-shutter {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  transform: none;
+  flex: 0 0 auto;
+  pointer-events: auto;
+}
+.camera-shutter:active { transform: scale(.92); }
+
+@media (max-width: 680px) {
+  .step-panel-2 {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  .step-panel-2 .camera-stage {
+    width: min(100%, 68dvh);
+    height: auto;
+    max-height: none;
+    flex: 0 0 auto;
+  }
+  .step-panel-2 .camera-actions {
+    inset: auto 0 12px;
+    height: 70px;
+  }
+  .step-panel-2 .camera-switch-button {
+    left: 12px;
+  }
+}
