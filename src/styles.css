@@ -346,3 +346,78 @@ footer { padding: 35px 0 0; color: #95a197; font-size: .72rem; text-align: cente
 
 /* Preview and export share the same 1200x1800 Canvas render */
 .poster-rendered-preview { display: block; width: 100%; height: 100%; object-fit: contain; }
+
+
+/* Camera UX v0.6.0: square live view and icon controls */
+.camera-stage {
+  width: min(100%, 720px);
+  aspect-ratio: 1 / 1;
+  min-height: 0;
+  height: auto;
+  margin-inline: auto;
+}
+.camera-stage video,
+.camera-stage .camera-image-layer {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+.camera-actions {
+  position: absolute;
+  inset: 0;
+  bottom: auto;
+  display: block;
+  pointer-events: none;
+}
+.camera-icon-button,
+.camera-shutter {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  pointer-events: auto;
+  border: 0;
+}
+.camera-icon-button {
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(20, 45, 35, .72);
+  color: #fff;
+  font-size: 1.55rem;
+  line-height: 1;
+  backdrop-filter: blur(5px);
+}
+.camera-shutter {
+  left: 50%;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  width: 72px;
+  height: 72px;
+  transform: translateX(-50%);
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: rgba(255,255,255,.25);
+  box-shadow: 0 3px 12px rgba(0,0,0,.28);
+}
+.camera-shutter span {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #17804a;
+  box-shadow: inset 0 0 0 3px #ffd43b;
+}
+.camera-shutter:active { transform: translateX(-50%) scale(.92); }
+.empty-camera-action { margin-top: 8px; }
+@media (max-width: 680px) {
+  .camera-stage {
+    width: 100%;
+    max-height: none;
+    flex: none;
+  }
+  .camera-icon-button { width: 40px; height: 40px; font-size: 1.35rem; }
+  .camera-shutter { width: 64px; height: 64px; }
+  .camera-shutter span { width: 48px; height: 48px; }
+}
