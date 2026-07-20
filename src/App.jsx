@@ -255,6 +255,10 @@ function App() {
   }, [cameraOpen]);
 
   useEffect(() => {
+    if (activeStep !== 2 && cameraOpen) stopCamera();
+  }, [activeStep, cameraOpen, stopCamera]);
+
+  useEffect(() => {
     refreshQueue();
     refreshGallery();
     const onOnline = async () => {
@@ -310,11 +314,17 @@ function App() {
 
   function capturePhoto() {
     const video = videoRef.current;
-    if (!video?.videoWidth) return;
+    if (!video?.videoWidth || !video?.videoHeight) return;
+    const size = Math.min(video.videoWidth, video.videoHeight);
+    const sourceX = Math.floor((video.videoWidth - size) / 2);
+    const sourceY = Math.floor((video.videoHeight - size) / 2);
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d").drawImage(video, 0, 0);
+    canvas.width = size;
+    canvas.height = size;
+    const context = canvas.getContext("2d");
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    context.drawImage(video, sourceX, sourceY, size, size, 0, 0, size, size);
     updateActivePhoto({ dataUrl: canvas.toDataURL("image/jpeg", 0.92), zoom: 1, filterId: "original", filterIntensity: 100 });
     setActiveStep(2);
     setStatus("ถ่ายรูปที่ " + (activePhotoSlot + 1) + " แล้ว");
@@ -426,14 +436,16 @@ function App() {
           </div>
           <p className="slot-status">กำลังแก้ไขรูปที่ {activePhotoSlot + 1} จาก 4 {photos[activePhotoSlot].dataUrl ? "· มีรูปแล้ว" : "· รอรูปภาพ"}</p>
           <div className={"camera-stage " + (photos[activePhotoSlot].dataUrl ? "has-image" : "")}>
-            {photos[activePhotoSlot].dataUrl && <img className="camera-image-layer" src={photos[activePhotoSlot].dataUrl} alt={"รูปที่ " + (activePhotoSlot + 1)} style={{ transform: "scale(" + photos[activePhotoSlot].zoom + ")", filter: getFilterStyle(photos[activePhotoSlot].filterId, photos[activePhotoSlot].filterIntensity) }} />}
-            {!photos[activePhotoSlot].dataUrl && !cameraOpen && <div className="empty-camera"><div className="camera-icon">⌾</div><strong>ยังไม่มีรูปช่องนี้</strong><span>กดเปิดกล้อง หรือเลือกรูปจากเครื่อง</span></div>}
+            {photos[activePhotoSlot].dataUrl && !cameraOpen && <img className="camera-image-layer" src={photos[activePhotoSlot].dataUrl} alt={"รูปที่ " + (activePhotoSlot + 1)} style={{ transform: "scale(" + photos[activePhotoSlot].zoom + ")", filter: getFilterStyle(photos[activePhotoSlot].filterId, photos[activePhotoSlot].filterIntensity) }} />}
+            {!photos[activePhotoSlot].dataUrl && !cameraOpen && <div className="empty-camera"><div className="camera-icon">⌾</div><strong>ยังไม่มีรูปช่องนี้</strong><span>ถ่ายด้วยกล้องหรือเลือกจากเครื่อง</span><button className="primary-button empty-camera-action" onClick={() => startCamera()}>ถ่ายด้วยกล้อง</button></div>}
             {cameraOpen && <video ref={videoRef} autoPlay playsInline muted />}
-            {cameraOpen && <div className="camera-actions"><button className="primary-button" onClick={capturePhoto}>ถ่ายภาพ</button><button className="ghost-button" onClick={() => { const next = facingMode === "environment" ? "user" : "environment"; setFacingMode(next); startCamera(next); }}>สลับกล้อง</button><button className="ghost-button" onClick={stopCamera}>ปิดกล้อง</button></div>}
+            {cameraOpen && <div className="camera-actions">
+              <button className="camera-icon-button camera-switch-button" aria-label="สลับกล้อง" title="สลับกล้อง" onClick={() => { const next = facingMode === "environment" ? "user" : "environment"; setFacingMode(next); startCamera(next); }}>⟳</button>
+              <button className="camera-shutter" aria-label="ถ่ายภาพ" title="ถ่ายภาพ" onClick={capturePhoto}><span /></button>
+            </div>}
           </div>
           <div className="control-row">
-            <button className="primary-button" onClick={() => startCamera()}>{cameraOpen ? "เปิดกล้องอีกครั้ง" : "เปิดกล้อง"}</button>
-            <label className="secondary-button">เลือกรูป<input type="file" accept="image/*" onChange={(event) => setImageFromFile(event.target.files[0])} /></label>
+            <label className="secondary-button">เลือกภาพ<input type="file" accept="image/*" onChange={(event) => setImageFromFile(event.target.files[0])} /></label>
             {photos[activePhotoSlot].dataUrl && <button className="secondary-button" onClick={() => updateActivePhoto({ dataUrl: "", zoom: 1, filterId: "original", filterIntensity: 100 })}>ล้างช่อง</button>}
           </div>
           {photos[activePhotoSlot].dataUrl && <div className="zoom-control"><span>ซูม</span><input type="range" min="1" max="2.5" step=".05" value={photos[activePhotoSlot].zoom} onChange={(event) => updateActivePhoto({ zoom: Number(event.target.value) })} /><strong>{photos[activePhotoSlot].zoom.toFixed(1)}x</strong></div>}
