@@ -9,6 +9,7 @@ const CANVAS_WIDTH = 1200;
 const CANVAS_HEIGHT = 1800;
 const DB_NAME = "rytc-photo-card";
 const STORE_NAME = "pending-uploads";
+const GALLERY_STORE_NAME = "gallery-items";
 
 const templates = [
   { id: "sunshine", name: "Sunshine", className: "template-sunshine", accent: "#f4b400" },
@@ -55,8 +56,12 @@ const fileName = () => "RYTC-Photo-" + timestamp() + ".png";
 
 function openDb() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1);
-    request.onupgradeneeded = () => request.result.createObjectStore(STORE_NAME, { keyPath: "requestId" });
+    const request = indexedDB.open(DB_NAME, 2);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME, { keyPath: "requestId" });
+      if (!db.objectStoreNames.contains(GALLERY_STORE_NAME)) db.createObjectStore(GALLERY_STORE_NAME, { keyPath: "galleryId" });
+    };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
@@ -78,6 +83,28 @@ async function pendingUploads() {
   const result = await new Promise((resolve, reject) => {
     const request = db.transaction(STORE_NAME).objectStore(STORE_NAME).getAll();
     request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  db.close();
+  return result;
+}
+
+async function saveGalleryItem(item) {
+  const db = await openDb();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(GALLERY_STORE_NAME, "readwrite");
+    tx.objectStore(GALLERY_STORE_NAME).put(item);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+  db.close();
+}
+
+async function galleryItems() {
+  const db = await openDb();
+  const result = await new Promise((resolve, reject) => {
+    const request = db.transaction(GALLERY_STORE_NAME).objectStore(GALLERY_STORE_NAME).getAll();
+    request.onsuccess = () => resolve(request.result.sort((a, b) => b.createdAt - a.createdAt));
     request.onerror = () => reject(request.error);
   });
   db.close();
@@ -151,6 +178,7 @@ function App() {
   const [queueCount, setQueueCount] = useState(0);
   const [lastUrl, setLastUrl] = useState("");
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [gallery, setGallery] = useState([]);
 
   useEffect(() => {
     window.__RYTC_CAN_UPDATE = !busy && !cameraOpen;
@@ -168,6 +196,10 @@ function App() {
 
   const refreshQueue = useCallback(async () => {
     try { setQueueCount((await pendingUploads()).length); } catch { setQueueCount(0); }
+  }, []);
+
+  const refreshGallery = useCallback(async () => {
+    try { setGallery(await galleryItems()); } catch { setGallery([]); }
   }, []);
 
   const stopCamera = useCallback(() => {
@@ -200,13 +232,14 @@ function App() {
 
   useEffect(() => {
     refreshQueue();
+    refreshGallery();
     const onOnline = async () => {
       setStatus("เชื่อมต่ออินเทอร์เน็ตแล้ว กำลังอัปโหลดไฟล์ค้าง...");
       await retryQueue();
     };
     window.addEventListener("online", onOnline);
     return () => { window.removeEventListener("online", onOnline); stopCamera(); };
-  }, []);
+  }, [refreshGallery]);
 
   async function retryQueue() {
     setBusy(true);
@@ -446,6 +479,8 @@ function App() {
     try {
       const dataUrl = await renderPostcard();
       const item = { requestId: crypto.randomUUID(), filename: fileName(), dataUrl, createdAt: Date.now() };
+      await saveGalleryItem({ galleryId: item.requestId, filename: item.filename, dataUrl: item.dataUrl, createdAt: item.createdAt, templateId, filterId, filterIntensity });
+      await refreshGallery();
       const link = document.createElement("a");
       link.href = dataUrl;
       link.download = item.filename;
@@ -496,7 +531,7 @@ function App() {
       </section>
 
       <nav className="stepper" aria-label="ขั้นตอนการสร้าง Photo Card">
-        {[["01", "แบบ", 1], ["02", "รูปภาพ", 2], ["03", "บันทึก", 3]].map(([number, label, step]) => (
+        {[["01", "แบบ", 1], ["02", "รูปภาพ", 2], ["03", "บันทึก", 3], ["04", "แกลเลอรี่", 4]].map(([number, label, step]) => (
           <button key={step} className={activeStep === step ? "active" : ""} onClick={() => setActiveStep(step)}>
             <span>{number}</span><b>{label}</b>
           </button>
@@ -573,6 +608,16 @@ function App() {
           {queueCount > 0 && <button className="queue-button" onClick={retryQueue}>มีไฟล์รออัปโหลด {queueCount} รายการ · ลองอีกครั้ง</button>}
         </div>
       </section>
+
+        <div className={"panel gallery-panel step-panel step-panel-4 " + (activeStep === 4 ? "active" : "")}>
+          <div className="section-heading"><span className="step-number">04</span><div><h3>แกลเลอรี่</h3><p>รวม Photo Card ที่สร้างจากแอปนี้ในเครื่อง</p></div></div>
+          {gallery.length ? <div className="gallery-grid">
+            {gallery.map((item) => <article className="gallery-item" key={item.galleryId}>
+              <img src={item.dataUrl} alt={item.filename} />
+              <div className="gallery-item-meta"><strong>{item.filename}</strong><span>{new Date(item.createdAt).toLocaleString("th-TH")}</span></div>
+            </article>)}
+          </div> : <div className="gallery-empty"><strong>ยังไม่มีรูปในแกลเลอรี่</strong><span>เมื่อบันทึก Photo Card รูปจะมาแสดงที่นี่อัตโนมัติ</span></div>}
+        </div>
 
       <footer>วิทยาลัยเทคนิคระยอง · RYTC Photo Card · ใช้งานได้ทุกอุปกรณ์ · {APP_VERSION}</footer>
     </main>
