@@ -166,7 +166,7 @@ footer { padding: 35px 0 0; color: #95a197; font-size: .72rem; text-align: cente
   .topbar .eyebrow { font-size: .48rem; letter-spacing: .1em; }
   .online-pill { padding: 5px 8px; font-size: .58rem; }
   .hero { display: none; }
-  .stepper { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 10px 0 8px; }
+  .stepper { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 10px 0 8px; }
   .stepper button { min-height: 38px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 12px; background: #eef6eb; color: #7d8d81; font-size: .68rem; }
   .stepper button span { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 8px; background: #d7e8d4; font-size: .58rem; font-weight: 900; }
   .stepper button b { font-weight: 800; }
@@ -293,4 +293,22 @@ footer { padding: 35px 0 0; color: #95a197; font-size: .72rem; text-align: cente
   object-fit: cover;
   transform-origin: center;
   transition: filter .18s ease, transform .18s ease;
+}
+
+
+/* Local Gallery */
+.gallery-panel { grid-column: 1 / -1; }
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.gallery-item { overflow: hidden; border: 1px solid #e1ebdc; border-radius: 16px; background: #fffdf4; }
+.gallery-item img { display: block; width: 100%; aspect-ratio: 2 / 3; object-fit: cover; }
+.gallery-item-meta { display: grid; gap: 3px; padding: 8px 10px 10px; color: #718074; font-size: .68rem; }
+.gallery-item-meta strong { overflow: hidden; color: #173b2b; font-size: .66rem; text-overflow: ellipsis; white-space: nowrap; }
+.gallery-empty { min-height: 150px; display: grid; place-content: center; gap: 6px; border: 1px dashed #cbdcc7; border-radius: 16px; background: #f7fbf3; color: #718074; text-align: center; font-size: .75rem; }
+.gallery-empty strong { color: #17804a; }
+@media (max-width: 680px) {
+  .gallery-panel { grid-column: auto; }
+  .gallery-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; overflow: auto; min-height: 0; }
+  .gallery-item-meta { padding: 6px 8px 8px; font-size: .58rem; }
+  .gallery-item-meta strong { font-size: .55rem; }
+  .gallery-empty { flex: 1; min-height: 0; }
 }
