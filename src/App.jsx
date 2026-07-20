@@ -191,6 +191,8 @@ function App() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [gallery, setGallery] = useState([]);
   const [previewSrc, setPreviewSrc] = useState("");
+  const [selectedGalleryItem, setSelectedGalleryItem] = useState(null);
+  const retryRunningRef = useRef(false);
 
   useEffect(() => {
     window.__RYTC_CAN_UPDATE = !busy && !cameraOpen;
@@ -272,24 +274,48 @@ function App() {
     };
   }, [refreshGallery, refreshQueue, stopCamera]);
 
+  const getViewUrl = (result) => result?.viewUrl || result?.fileUrl || result?.url || "";
+
+  const waitBeforeRetry = (attempt) => new Promise((resolve) => {
+    window.setTimeout(resolve, Math.min(1000 * (2 ** Math.min(attempt, 4)), 10000));
+  });
+
+  async function uploadUntilSuccess(item) {
+    let attempt = 0;
+    while (navigator.onLine && UPLOAD_ENDPOINT) {
+      try {
+        return await uploadItem(item);
+      } catch (error) {
+        attempt += 1;
+        setStatus("อัปโหลดไม่สำเร็จ กำลังลองใหม่อัตโนมัติครั้งที่ " + attempt + "...");
+        await waitBeforeRetry(attempt);
+      }
+    }
+    throw new Error("ออฟไลน์: ไฟล์ถูกเก็บไว้รออัปโหลด");
+  }
+
   async function retryQueue() {
+    if (retryRunningRef.current) return;
+    retryRunningRef.current = true;
     setBusy(true);
     try {
-      const items = await pendingUploads();
-      let lastError = null;
-      for (const item of items) {
-        try {
-          await uploadItem(item);
+      while (navigator.onLine && UPLOAD_ENDPOINT) {
+        const items = await pendingUploads();
+        if (!items.length) break;
+        for (const item of items) {
+          const result = await uploadUntilSuccess(item);
           await removeUpload(item.requestId);
-        } catch (error) {
-          lastError = error;
-          break;
+          const viewUrl = getViewUrl(result);
+          if (viewUrl) setLastUrl(viewUrl);
         }
       }
       await refreshQueue();
-      if (lastError) setStatus("อัปโหลดไม่สำเร็จ: " + lastError.message);
-      else if (items.length) setStatus("ตรวจสอบคิวอัปโหลดแล้ว");
+      setStatus("อัปโหลด Google Drive สำเร็จแล้ว");
+    } catch (error) {
+      await refreshQueue();
+      setStatus(error.message);
     } finally {
+      retryRunningRef.current = false;
       setBusy(false);
     }
   }
@@ -375,17 +401,18 @@ function App() {
       link.href = dataUrl;
       link.download = item.filename;
       link.click();
+      await queueUpload(item);
       if (navigator.onLine && UPLOAD_ENDPOINT) {
         try {
-          const result = await uploadItem(item);
-          setLastUrl(result.viewUrl || "");
+          const result = await uploadUntilSuccess(item);
+          await removeUpload(item.requestId);
+          const viewUrl = getViewUrl(result);
+          if (viewUrl) setLastUrl(viewUrl);
           setStatus("บันทึกลงเครื่องและ Google Drive แล้ว");
         } catch (error) {
-          await queueUpload(item);
-          setStatus("บันทึกลงเครื่องแล้ว แต่ส่ง Google Drive ไม่สำเร็จ: " + error.message);
+          setStatus("บันทึกลงเครื่องแล้ว: " + error.message);
         }
       } else {
-        await queueUpload(item);
         setStatus(UPLOAD_ENDPOINT ? "ออฟไลน์: บันทึกแล้ว รออัปโหลด" : "บันทึกลงเครื่องแล้ว (ยังไม่ได้ตั้งค่า Upload API)");
       }
       await refreshQueue();
@@ -393,6 +420,27 @@ function App() {
       setStatus(error.message);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function shareGalleryItem(item) {
+    try {
+      const blob = dataUrlToBlob(item.dataUrl);
+      const file = new File([blob], item.filename, { type: "image/png" });
+      if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+        await navigator.share({ title: "RYTC Photo Card", files: [file] });
+        setStatus("แชร์รูปเรียบร้อยแล้ว");
+      } else {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = item.filename;
+        link.click();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        setStatus("อุปกรณ์นี้ไม่รองรับการแชร์โดยตรง จึงเตรียมไฟล์สำหรับดาวน์โหลดแล้ว");
+      }
+    } catch (error) {
+      if (error.name !== "AbortError") setStatus("แชร์รูปไม่สำเร็จ");
     }
   }
 
@@ -475,9 +523,19 @@ function App() {
 
         <div className={"panel gallery-panel step-panel step-panel-4 " + (activeStep === 4 ? "active" : "")}>
           <div className="section-heading"><span className="step-number">04</span><div><h3>แกลเลอรี่</h3><p>รวม Photo Card ที่สร้างจากแอปนี้ในเครื่อง</p></div></div>
-          {gallery.length ? <div className="gallery-grid">{gallery.map((item) => <article className="gallery-item" key={item.galleryId}><img src={item.dataUrl} alt={item.filename} /><div className="gallery-item-meta"><strong>{item.filename}</strong><span>{new Date(item.createdAt).toLocaleString("th-TH")}</span></div></article>)}</div> : <div className="gallery-empty"><strong>ยังไม่มีรูปในแกลเลอรี่</strong><span>เมื่อบันทึก Photo Card รูปจะมาแสดงที่นี่อัตโนมัติ</span></div>}
+          {gallery.length ? <div className="gallery-grid">{gallery.map((item) => <button className="gallery-item" key={item.galleryId} onClick={() => setSelectedGalleryItem(item)}><img src={item.dataUrl} alt={item.filename} /><span className="gallery-item-meta"><strong>{item.filename}</strong><span>{new Date(item.createdAt).toLocaleString("th-TH")}</span></span></button>)}</div> : <div className="gallery-empty"><strong>ยังไม่มีรูปในแกลเลอรี่</strong><span>เมื่อบันทึก Photo Card รูปจะมาแสดงที่นี่อัตโนมัติ</span></div>}
         </div>
       </section>
+      {selectedGalleryItem && <div className="gallery-modal" role="dialog" aria-modal="true" aria-label="ดูรูปภาพ" onClick={() => setSelectedGalleryItem(null)}>
+        <div className="gallery-modal-card" onClick={(event) => event.stopPropagation()}>
+          <button className="gallery-modal-close" aria-label="ปิด" onClick={() => setSelectedGalleryItem(null)}>×</button>
+          <img src={selectedGalleryItem.dataUrl} alt={selectedGalleryItem.filename} />
+          <div className="gallery-modal-actions">
+            <button className="primary-button" onClick={() => shareGalleryItem(selectedGalleryItem)}>แชร์รูป</button>
+            <a className="secondary-button" href={selectedGalleryItem.dataUrl} download={selectedGalleryItem.filename}>ดาวน์โหลด PNG</a>
+          </div>
+        </div>
+      </div>}
       <footer>วิทยาลัยเทคนิคระยอง · RYTC Photo Card · ใช้งานได้ทุกอุปกรณ์ · {APP_VERSION}</footer>
     </main>
   );
