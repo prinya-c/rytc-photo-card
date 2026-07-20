@@ -183,7 +183,8 @@ function App() {
   const [photos, setPhotos] = useState(() => Array.from({ length: 4 }, createEmptyPhoto));
   const [activePhotoSlot, setActivePhotoSlot] = useState(0);
   const [cameraOpen, setCameraOpen] = useState(false);
-  const [facingMode, setFacingMode] = useState("environment");  const [status, setStatus] = useState("พร้อมสร้าง Photo Card");
+  const [facingMode, setFacingMode] = useState("environment");
+  const [status, setStatus] = useState("พร้อมสร้าง Photo Card");
   const [busy, setBusy] = useState(false);
   const [queueCount, setQueueCount] = useState(0);
   const [lastUrl, setLastUrl] = useState("");
@@ -201,7 +202,180 @@ function App() {
   useEffect(() => {
     const onUpdateAvailable = () => setUpdateAvailable(true);
     window.addEventListener("rytc-update-available", onUpdateAvailable);
-    return (
+    return () => window.removeEventListener("rytc-update-available", onUpdateAvailable);
+  }, []);
+
+  const refreshQueue = useCallback(async () => {
+    try { setQueueCount((await pendingUploads()).length); } catch { setQueueCount(0); }
+  }, []);
+
+  const refreshGallery = useCallback(async () => {
+    try { setGallery(await galleryItems()); } catch { setGallery([]); }
+  }, []);
+
+  const stopCamera = useCallback(() => {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    setCameraOpen(false);
+  }, []);
+
+  const startCamera = useCallback(async (mode = facingMode) => {
+    try {
+      stopCamera();
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: mode }, width: { ideal: 1280 }, height: { ideal: 1920 } },
+        audio: false
+      });
+      streamRef.current = stream;
+      setCameraOpen(true);
+      setStatus("กล้องพร้อมถ่ายภาพ");
+    } catch (error) {
+      setStatus(error.name === "NotAllowedError" ? "กรุณาอนุญาตการใช้กล้องใน Browser" : "ไม่สามารถเปิดกล้องได้");
+    }
+  }, [facingMode, stopCamera]);
+
+  useEffect(() => {
+    if (cameraOpen && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [cameraOpen]);
+
+  useEffect(() => {
+    refreshQueue();
+    refreshGallery();
+    const onOnline = async () => {
+      setStatus("เชื่อมต่ออินเทอร์เน็ตแล้ว กำลังอัปโหลดไฟล์ค้าง...");
+      await retryQueue();
+    };
+    window.addEventListener("online", onOnline);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      stopCamera();
+    };
+  }, [refreshGallery, refreshQueue, stopCamera]);
+
+  async function retryQueue() {
+    setBusy(true);
+    try {
+      const items = await pendingUploads();
+      let lastError = null;
+      for (const item of items) {
+        try {
+          await uploadItem(item);
+          await removeUpload(item.requestId);
+        } catch (error) {
+          lastError = error;
+          break;
+        }
+      }
+      await refreshQueue();
+      if (lastError) setStatus("อัปโหลดไม่สำเร็จ: " + lastError.message);
+      else if (items.length) setStatus("ตรวจสอบคิวอัปโหลดแล้ว");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function updateActivePhoto(changes) {
+    setPhotos((current) => current.map((photo, index) => index === activePhotoSlot ? { ...photo, ...changes } : photo));
+  }
+
+  function setImageFromFile(file) {
+    if (!file || !file.type.startsWith("image/")) {
+      setStatus("กรุณาเลือกไฟล์ภาพเท่านั้น");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      updateActivePhoto({ dataUrl: reader.result, zoom: 1, filterId: "original", filterIntensity: 100 });
+      setActiveStep(2);
+      setStatus("เลือกรูปที่ " + (activePhotoSlot + 1) + " แล้ว");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function capturePhoto() {
+    const video = videoRef.current;
+    if (!video?.videoWidth) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0);
+    updateActivePhoto({ dataUrl: canvas.toDataURL("image/jpeg", 0.92), zoom: 1, filterId: "original", filterIntensity: 100 });
+    setActiveStep(2);
+    setStatus("ถ่ายรูปที่ " + (activePhotoSlot + 1) + " แล้ว");
+    stopCamera();
+  }
+
+  function drawCover(ctx, image, x, y, width, height, scale = 1, filter = "none") {
+    const ratio = Math.max(width / image.width, height / image.height) * scale;
+    const drawWidth = image.width * ratio;
+    const drawHeight = image.height * ratio;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, width, height);
+    ctx.clip();
+    ctx.filter = filter;
+    ctx.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
+    ctx.restore();
+  }
+
+  async function renderPostcard() {
+    if (photos.some((photo) => !photo.dataUrl)) throw new Error("กรุณาใส่รูปให้ครบทั้ง 4 ช่อง");
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const selected = templates.find((item) => item.id === templateId);
+    const background = await loadImage(selected.asset);
+    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(background, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    for (let index = 0; index < PHOTO_SLOTS.length; index += 1) {
+      const photo = photos[index];
+      const image = await loadImage(photo.dataUrl);
+      const slot = PHOTO_SLOTS[index];
+      drawCover(ctx, image, slot.x, slot.y, slot.width, slot.height, photo.zoom, getFilterStyle(photo.filterId, photo.filterIntensity));
+    }
+    return canvas.toDataURL("image/png");
+  }
+
+  async function savePostcard() {
+    setBusy(true);
+    setLastUrl("");
+    try {
+      const dataUrl = await renderPostcard();
+      const item = { requestId: crypto.randomUUID(), filename: fileName(), dataUrl, createdAt: Date.now() };
+      await saveGalleryItem({ galleryId: item.requestId, filename: item.filename, dataUrl: item.dataUrl, createdAt: item.createdAt, templateId, photoCount: 4 });
+      await refreshGallery();
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = item.filename;
+      link.click();
+      if (navigator.onLine && UPLOAD_ENDPOINT) {
+        try {
+          const result = await uploadItem(item);
+          setLastUrl(result.viewUrl || "");
+          setStatus("บันทึกลงเครื่องและ Google Drive แล้ว");
+        } catch (error) {
+          await queueUpload(item);
+          setStatus("บันทึกลงเครื่องแล้ว แต่ส่ง Google Drive ไม่สำเร็จ: " + error.message);
+        }
+      } else {
+        await queueUpload(item);
+        setStatus(UPLOAD_ENDPOINT ? "ออฟไลน์: บันทึกแล้ว รออัปโหลด" : "บันทึกลงเครื่องแล้ว (ยังไม่ได้ตั้งค่า Upload API)");
+      }
+      await refreshQueue();
+    } catch (error) {
+      setStatus(error.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const selectedTemplate = templates.find((item) => item.id === templateId);
+
+  return (
     <main className="app-shell">
       <header className="topbar">
         <div className="brand-mark">RY</div>
