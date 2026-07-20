@@ -476,3 +476,34 @@ footer { padding: 35px 0 0; color: #95a197; font-size: .72rem; text-align: cente
     left: 12px;
   }
 }
+
+
+/* Camera icon refinement v0.6.2 */
+.camera-shutter {
+  width: 64px;
+  height: 64px;
+  border: 3px solid #ffd43b;
+  background: #17804a;
+  box-shadow: 0 3px 12px rgba(0,0,0,.28);
+}
+.camera-shutter span {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  box-shadow: none;
+}
+.camera-icon-button {
+  background: #123b2b;
+  border: 2px solid rgba(255,255,255,.9);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+}
+.camera-icon-button svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
