@@ -190,6 +190,7 @@ function App() {
   const [lastUrl, setLastUrl] = useState("");
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [gallery, setGallery] = useState([]);
+  const [previewSrc, setPreviewSrc] = useState("");
 
   useEffect(() => {
     window.__RYTC_CAN_UPDATE = !busy && !cameraOpen;
@@ -212,6 +213,18 @@ function App() {
   const refreshGallery = useCallback(async () => {
     try { setGallery(await galleryItems()); } catch { setGallery([]); }
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (photos.some((photo) => !photo.dataUrl)) {
+      setPreviewSrc("");
+      return undefined;
+    }
+    renderPostcard()
+      .then((dataUrl) => { if (!cancelled) setPreviewSrc(dataUrl); })
+      .catch(() => { if (!cancelled) setPreviewSrc(""); });
+    return () => { cancelled = true; };
+  }, [templateId, photos]);
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -437,8 +450,7 @@ function App() {
         <div className={"panel preview-panel step-panel step-panel-3 " + (activeStep === 3 ? "active" : "")}>
           <div className="section-heading"><span className="step-number">03</span><div><h3>ตรวจสอบ Photo Card</h3><p>รูปทั้ง 4 ช่องจะถูกวางแทนพื้นที่วิวใน Template</p></div></div>
           <div className="poster-preview">
-            <img className="poster-template-image" src={selectedTemplate.asset} alt={selectedTemplate.name} />
-            {photos.map((photo, index) => photo.dataUrl && <img key={index} className={"poster-photo poster-photo-" + index} src={photo.dataUrl} alt={"รูปที่ " + (index + 1)} style={{ transform: "scale(" + photo.zoom + ")", filter: getFilterStyle(photo.filterId, photo.filterIntensity) }} />)}
+            {previewSrc ? <img className="poster-rendered-preview" src={previewSrc} alt={"ตัวอย่าง " + selectedTemplate.name} /> : <div className="preview-placeholder">กรุณาใส่รูปให้ครบทั้ง 4 ช่อง</div>}
           </div>
           <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="offscreen-canvas" />
           <button className="save-button" disabled={photos.some((photo) => !photo.dataUrl) || busy} onClick={savePostcard}>{busy ? "กำลังบันทึก..." : "บันทึกเป็น PNG"}</button>
