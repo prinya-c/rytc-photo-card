@@ -440,7 +440,9 @@ function App() {
             {!photos[activePhotoSlot].dataUrl && !cameraOpen && <div className="empty-camera"><div className="camera-icon">⌾</div><strong>ยังไม่มีรูปช่องนี้</strong><span>ถ่ายด้วยกล้องหรือเลือกจากเครื่อง</span><button className="primary-button empty-camera-action" onClick={() => startCamera()}>ถ่ายด้วยกล้อง</button></div>}
             {cameraOpen && <video ref={videoRef} autoPlay playsInline muted />}
             {cameraOpen && <div className="camera-actions">
-              <button className="camera-icon-button camera-switch-button" aria-label="สลับกล้อง" title="สลับกล้อง" onClick={() => { const next = facingMode === "environment" ? "user" : "environment"; setFacingMode(next); startCamera(next); }}>⟳</button>
+              <button className="camera-icon-button camera-switch-button" aria-label="สลับกล้อง" title="สลับกล้อง" onClick={() => { const next = facingMode === "environment" ? "user" : "environment"; setFacingMode(next); startCamera(next); }}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h9a4 4 0 0 1 3.7 2.5M17 17H8a4 4 0 0 1-3.7-2.5M18 5v4.5h-4.5M6 19v-4.5h4.5M12 9.2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6Z"/></svg>
+              </button>
               <button className="camera-shutter" aria-label="ถ่ายภาพ" title="ถ่ายภาพ" onClick={capturePhoto}><span /></button>
             </div>}
           </div>
