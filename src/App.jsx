@@ -5,25 +5,91 @@ const APP_VERSION = "v" + packageJson.version;
 const LOGO_URL = "https://resume.rytc.ac.th/assets/rytc_logo-DMbLvb1_.png";
 const LOGO_EXPORT_URL = (import.meta.env.BASE_URL || "/") + "assets/rytc-logo-original.png";
 const UPLOAD_ENDPOINT = import.meta.env.VITE_UPLOAD_ENDPOINT || "";
-const CANVAS_WIDTH = 1200;
+const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 1800;
 const DB_NAME = "rytc-photo-card";
 const STORE_NAME = "pending-uploads";
 const GALLERY_STORE_NAME = "gallery-items";
 
 const TEMPLATE_BASE = (import.meta.env.BASE_URL || "/") + "templates/";
-const PHOTO_SLOTS = [
-  { x: 72, y: 375, width: 480, height: 480 },
-  { x: 628, y: 375, width: 480, height: 480 },
-  { x: 72, y: 877, width: 480, height: 480 },
-  { x: 628, y: 877, width: 480, height: 480 }
-];
 const templates = [
-  { id: "template-1", name: "Digital Blue", asset: TEMPLATE_BASE + "template-1.png" },
-  { id: "template-2", name: "Blue Light", asset: TEMPLATE_BASE + "template-2.png" },
-  { id: "template-3", name: "Color Burst", asset: TEMPLATE_BASE + "template-3.png" },
-  { id: "template-4", name: "Art Connect", asset: TEMPLATE_BASE + "template-4.png" },
-  { id: "template-5", name: "Purple Tech", asset: TEMPLATE_BASE + "template-5.png" }
+  {
+    id: "template-1",
+    name: "RYTC Heart",
+    asset: TEMPLATE_BASE + "template-1.png",
+    slots: [
+      { x: 34, y: 493, width: 528, height: 360 },
+      { x: 34, y: 976, width: 528, height: 372 }
+    ]
+  },
+  {
+    id: "template-2",
+    name: "Always Friends",
+    asset: TEMPLATE_BASE + "template-2.png",
+    slots: [
+      { x: 35, y: 335, width: 521, height: 395 },
+      { x: 35, y: 823, width: 521, height: 397 }
+    ]
+  },
+  {
+    id: "template-3",
+    name: "Fresh Start",
+    asset: TEMPLATE_BASE + "template-3.png",
+    slots: [
+      { x: 28, y: 357, width: 544, height: 357 },
+      { x: 30, y: 729, width: 544, height: 356 },
+      { x: 33, y: 1100, width: 544, height: 356 }
+    ]
+  },
+  {
+    id: "template-4",
+    name: "Snap the Moment",
+    asset: TEMPLATE_BASE + "template-4.png",
+    slots: [
+      { x: 37, y: 289, width: 533, height: 377 },
+      { x: 39, y: 697, width: 532, height: 377 },
+      { x: 37, y: 1107, width: 533, height: 377 }
+    ]
+  },
+  {
+    id: "template-5",
+    name: "Let's Go",
+    asset: TEMPLATE_BASE + "template-5.png",
+    slots: [
+      { x: 74, y: 236, width: 439, height: 342 },
+      { x: 74, y: 624, width: 439, height: 343 },
+      { x: 74, y: 1012, width: 439, height: 343 }
+    ]
+  },
+  {
+    id: "template-6",
+    name: "Special Moment",
+    asset: TEMPLATE_BASE + "template-6.png",
+    slots: [
+      { x: 44, y: 321, width: 520, height: 376 },
+      { x: 47, y: 782, width: 520, height: 376 }
+    ]
+  },
+  {
+    id: "template-7",
+    name: "RYTC Photo Card",
+    asset: TEMPLATE_BASE + "template-7.png",
+    slots: [
+      { x: 42, y: 263, width: 533, height: 383 },
+      { x: 42, y: 647, width: 533, height: 404 },
+      { x: 42, y: 1072, width: 533, height: 383 }
+    ]
+  },
+  {
+    id: "template-8",
+    name: "Information Technology",
+    asset: TEMPLATE_BASE + "template-8.png",
+    slots: [
+      { x: 94, y: 406, width: 465, height: 322 },
+      { x: 93, y: 794, width: 466, height: 322 },
+      { x: 94, y: 1171, width: 465, height: 322 }
+    ]
+  }
 ];
 
 
@@ -180,7 +246,7 @@ function App() {
   const canvasRef = useRef(null);
   const [templateId, setTemplateId] = useState(templates[0].id);
   const [activeStep, setActiveStep] = useState(1);
-  const [photos, setPhotos] = useState(() => Array.from({ length: 4 }, createEmptyPhoto));
+  const [photos, setPhotos] = useState(() => Array.from({ length: templates[0].slots.length }, createEmptyPhoto));
   const [activePhotoSlot, setActivePhotoSlot] = useState(0);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [facingMode, setFacingMode] = useState("environment");
@@ -324,6 +390,20 @@ function App() {
     setPhotos((current) => current.map((photo, index) => index === activePhotoSlot ? { ...photo, ...changes } : photo));
   }
 
+  function chooseTemplate(id) {
+    const nextTemplate = templates.find((item) => item.id === id);
+    if (!nextTemplate) return;
+    setTemplateId(id);
+    setPhotos((current) => Array.from(
+      { length: nextTemplate.slots.length },
+      (_, index) => current[index] || createEmptyPhoto()
+    ));
+    setActivePhotoSlot(0);
+    setPreviewSrc("");
+    setActiveStep(2);
+    setStatus("เลือก " + nextTemplate.name + " แล้ว · ต้องใช้ " + nextTemplate.slots.length + " รูป");
+  }
+
   function setImageFromFile(file) {
     if (!file || !file.type.startsWith("image/")) {
       setStatus("กรุณาเลือกไฟล์ภาพเท่านั้น");
@@ -371,19 +451,21 @@ function App() {
   }
 
   async function renderPostcard() {
-    if (photos.some((photo) => !photo.dataUrl)) throw new Error("กรุณาใส่รูปให้ครบทั้ง 4 ช่อง");
+    const selected = templates.find((item) => item.id === templateId);
+    if (photos.some((photo) => !photo.dataUrl)) {
+      throw new Error("กรุณาใส่รูปให้ครบทั้ง " + selected.slots.length + " ช่อง");
+    }
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
-    const selected = templates.find((item) => item.id === templateId);
     const background = await loadImage(selected.asset);
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(background, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    for (let index = 0; index < PHOTO_SLOTS.length; index += 1) {
+    for (let index = 0; index < selected.slots.length; index += 1) {
       const photo = photos[index];
       const image = await loadImage(photo.dataUrl);
-      const slot = PHOTO_SLOTS[index];
+      const slot = selected.slots[index];
       drawCover(ctx, image, slot.x, slot.y, slot.width, slot.height, photo.zoom, getFilterStyle(photo.filterId, photo.filterIntensity));
     }
     return canvas.toDataURL("image/png");
@@ -395,7 +477,7 @@ function App() {
     try {
       const dataUrl = await renderPostcard();
       const item = { requestId: crypto.randomUUID(), filename: fileName(), dataUrl, createdAt: Date.now() };
-      await saveGalleryItem({ galleryId: item.requestId, filename: item.filename, dataUrl: item.dataUrl, createdAt: item.createdAt, templateId, photoCount: 4 });
+      await saveGalleryItem({ galleryId: item.requestId, filename: item.filename, dataUrl: item.dataUrl, createdAt: item.createdAt, templateId, photoCount: selectedTemplate.slots.length });
       await refreshGallery();
       const link = document.createElement("a");
       link.href = dataUrl;
@@ -462,11 +544,11 @@ function App() {
 
       <section className="workspace">
         <div className={"panel step-panel step-panel-1 " + (activeStep === 1 ? "active" : "")}>
-          <div className="section-heading"><span className="step-number">01</span><div><h3>เลือก Template</h3><p>เลือกแบบที่ต้องการ แล้วใส่รูปให้ครบ 4 ช่อง</p></div></div>
+          <div className="section-heading"><span className="step-number">01</span><div><h3>เลือก Template</h3><p>มี 8 แบบ แต่ละแบบใช้จำนวนรูปต่างกัน</p></div></div>
           <div className="template-grid actual-template-grid">
             {templates.map((item) => (
-              <button key={item.id} className={"template-option " + (item.id === templateId ? "selected" : "")} onClick={() => { setTemplateId(item.id); setActiveStep(2); }}>
-                <img src={item.asset} alt={item.name} /><strong>{item.name}</strong>
+              <button key={item.id} className={"template-option " + (item.id === templateId ? "selected" : "")} onClick={() => chooseTemplate(item.id)}>
+                <img src={item.asset} alt={item.name} /><strong>{item.name}<small>{item.slots.length} รูป</small></strong>
               </button>
             ))}
           </div>
@@ -474,15 +556,15 @@ function App() {
         </div>
 
         <div className={"panel step-panel step-panel-2 " + (activeStep === 2 ? "active" : "")}>
-          <div className="section-heading"><span className="step-number">02</span><div><h3>เพิ่มรูปภาพ 4 ช่อง</h3><p>เลือกช่อง แล้วถ่ายภาพหรือเลือกรูปจากเครื่อง</p></div></div>
-          <div className="photo-slot-grid">
+          <div className="section-heading"><span className="step-number">02</span><div><h3>เพิ่มรูปภาพ {selectedTemplate.slots.length} ช่อง</h3><p>เลือกช่อง แล้วถ่ายภาพหรือเลือกรูปจากเครื่อง</p></div></div>
+          <div className="photo-slot-grid" style={{ gridTemplateColumns: "repeat(" + photos.length + ", minmax(0, 1fr))" }}>
             {photos.map((photo, index) => (
               <button key={index} className={"photo-slot " + (activePhotoSlot === index ? "active" : "")} onClick={() => setActivePhotoSlot(index)}>
                 {photo.dataUrl ? <img src={photo.dataUrl} alt={"รูปที่ " + (index + 1)} /> : <span>รูปที่ {index + 1}<small>ยังไม่มีรูป</small></span>}
               </button>
             ))}
           </div>
-          <p className="slot-status">กำลังแก้ไขรูปที่ {activePhotoSlot + 1} จาก 4 {photos[activePhotoSlot].dataUrl ? "· มีรูปแล้ว" : "· รอรูปภาพ"}</p>
+          <p className="slot-status">กำลังแก้ไขรูปที่ {activePhotoSlot + 1} จาก {selectedTemplate.slots.length} {photos[activePhotoSlot].dataUrl ? "· มีรูปแล้ว" : "· รอรูปภาพ"}</p>
           <div className={"camera-stage " + (photos[activePhotoSlot].dataUrl ? "has-image" : "")}>
             {photos[activePhotoSlot].dataUrl && !cameraOpen && <img className="camera-image-layer" src={photos[activePhotoSlot].dataUrl} alt={"รูปที่ " + (activePhotoSlot + 1)} style={{ transform: "scale(" + photos[activePhotoSlot].zoom + ")", filter: getFilterStyle(photos[activePhotoSlot].filterId, photos[activePhotoSlot].filterIntensity) }} />}
             {!photos[activePhotoSlot].dataUrl && !cameraOpen && <div className="empty-camera"><div className="camera-icon">⌾</div><strong>ยังไม่มีรูปช่องนี้</strong><span>ถ่ายด้วยกล้องหรือเลือกจากเครื่อง</span><button className="primary-button empty-camera-action" onClick={() => startCamera()}>ถ่ายด้วยกล้อง</button></div>}
@@ -510,9 +592,9 @@ function App() {
         </div>
 
         <div className={"panel preview-panel step-panel step-panel-3 " + (activeStep === 3 ? "active" : "")}>
-          <div className="section-heading"><span className="step-number">03</span><div><h3>ตรวจสอบ Photo Card</h3><p>รูปทั้ง 4 ช่องจะถูกวางแทนพื้นที่วิวใน Template</p></div></div>
+          <div className="section-heading"><span className="step-number">03</span><div><h3>ตรวจสอบ Photo Card</h3><p>รูปทั้ง {selectedTemplate.slots.length} ช่องจะถูกวางใน Template ที่เลือก</p></div></div>
           <div className="poster-preview">
-            {previewSrc ? <img className="poster-rendered-preview" src={previewSrc} alt={"ตัวอย่าง " + selectedTemplate.name} /> : <div className="preview-placeholder">กรุณาใส่รูปให้ครบทั้ง 4 ช่อง</div>}
+            {previewSrc ? <img className="poster-rendered-preview" src={previewSrc} alt={"ตัวอย่าง " + selectedTemplate.name} /> : <div className="preview-placeholder">กรุณาใส่รูปให้ครบทั้ง {selectedTemplate.slots.length} ช่อง</div>}
           </div>
           <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="offscreen-canvas" />
           <button className="save-button" disabled={photos.some((photo) => !photo.dataUrl) || busy} onClick={savePostcard}>{busy ? "กำลังบันทึก..." : "บันทึกเป็น PNG"}</button>
