@@ -283,6 +283,9 @@ footer { padding: 35px 0 0; color: #95a197; font-size: .72rem; text-align: cente
   position: relative;
   z-index: 1;
 }
+.camera-stage video.camera-mirror {
+  transform: scaleX(-1);
+}
 
 .camera-stage { isolation: isolate; }
 .camera-image-layer {

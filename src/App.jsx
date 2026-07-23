@@ -430,6 +430,10 @@ function App() {
     const context = canvas.getContext("2d");
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = "high";
+    if (facingMode === "user") {
+      context.translate(size, 0);
+      context.scale(-1, 1);
+    }
     context.drawImage(video, sourceX, sourceY, size, size, 0, 0, size, size);
     updateActivePhoto({ dataUrl: canvas.toDataURL("image/jpeg", 0.92), zoom: 1, filterId: "original", filterIntensity: 100 });
     setActiveStep(2);
@@ -568,7 +572,7 @@ function App() {
           <div className={"camera-stage " + (photos[activePhotoSlot].dataUrl ? "has-image" : "")}>
             {photos[activePhotoSlot].dataUrl && !cameraOpen && <img className="camera-image-layer" src={photos[activePhotoSlot].dataUrl} alt={"รูปที่ " + (activePhotoSlot + 1)} style={{ transform: "scale(" + photos[activePhotoSlot].zoom + ")", filter: getFilterStyle(photos[activePhotoSlot].filterId, photos[activePhotoSlot].filterIntensity) }} />}
             {!photos[activePhotoSlot].dataUrl && !cameraOpen && <div className="empty-camera"><div className="camera-icon">⌾</div><strong>ยังไม่มีรูปช่องนี้</strong><span>ถ่ายด้วยกล้องหรือเลือกจากเครื่อง</span><button className="primary-button empty-camera-action" onClick={() => startCamera()}>ถ่ายด้วยกล้อง</button></div>}
-            {cameraOpen && <video ref={videoRef} autoPlay playsInline muted />}
+            {cameraOpen && <video ref={videoRef} autoPlay playsInline muted className={facingMode === "user" ? "camera-mirror" : ""} />}
             {cameraOpen && <div className="camera-actions">
               <button className="camera-icon-button camera-switch-button" aria-label="สลับกล้อง" title="สลับกล้อง" onClick={() => { const next = facingMode === "environment" ? "user" : "environment"; setFacingMode(next); startCamera(next); }}>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h9a4 4 0 0 1 3.7 2.5M17 17H8a4 4 0 0 1-3.7-2.5M18 5v4.5h-4.5M6 19v-4.5h4.5M12 9.2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6Z"/></svg>
