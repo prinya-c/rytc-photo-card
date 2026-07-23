@@ -85,9 +85,9 @@ const templates = [
     name: "Information Technology",
     asset: TEMPLATE_BASE + "template-8.png",
     slots: [
-      { x: 91, y: 406, width: 467, height: 323 },
-      { x: 93, y: 794, width: 467, height: 323 },
-      { x: 93, y: 1171, width: 467, height: 323 }
+      { x: 91, y: 415, width: 467, height: 314 },
+      { x: 93, y: 803, width: 467, height: 314 },
+      { x: 93, y: 1180, width: 467, height: 314 }
     ]
   }
 ];
