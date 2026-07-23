@@ -5,7 +5,7 @@
 - Name: RYTC Photo Card
 - Repository: prinya-c/rytc-photo-card
 - Production URL: https://photo-card.rytc.ac.th
-- Product: responsive PWA for creating 4 x 6 inch portrait postcard PNG images.
+- Product: responsive PWA for creating 600 x 1800 px portrait photo-card PNG images.
 
 ## Technology
 
@@ -15,7 +15,7 @@ Use Vite, React, Tailwind CSS, PWA service worker, IndexedDB for offline pending
 
 - Responsive on smartphone, tablet, and desktop.
 - Green, white, and yellow visual theme.
-- Five colorful postcard templates.
+- Eight approved photo-card templates, each with its own two-photo or three-photo slot layout.
 - Every template includes the RYTC logo, the text วิทยาลัยเทคนิคระยอง, and the current date in YYYY-MM-DD format.
 - Logo: https://resume.rytc.ac.th/assets/rytc_logo-DMbLvb1_.png
 - Camera access from the browser, front/rear camera switching, capture, retake, zoom, crop, and selecting an existing image.
