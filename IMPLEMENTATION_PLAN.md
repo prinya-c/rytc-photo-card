@@ -12,9 +12,9 @@
 
 - Define green, white, and yellow design tokens.
 - Build responsive mobile, tablet, and desktop layouts.
-- Create five colorful 4 x 6 portrait templates.
-- Use a 1200 x 1800 px composition canvas.
-- Add the RYTC logo, วิทยาลัยเทคนิคระยอง, and runtime date in YYYY-MM-DD format.
+- Use the eight approved 600 x 1800 px portrait template assets.
+- Define photo slots per template instead of sharing one fixed layout.
+- Support two-photo and three-photo templates.
 
 ## Phase 3: Image input and editing
 
@@ -63,13 +63,14 @@ Test cross-origin requests from https://photo-card.rytc.ac.th. If direct browser
 
 Test Chrome, Safari, Android, iPhone, tablet, and desktop.
 
-Verify camera permissions, camera switching, retake, zoom, crop, file selection, all five templates, 1200 x 1800 PNG output, download behavior, offline queue persistence, reconnection retry, Drive upload, public link viewing, duplicate prevention, and responsive layouts.
+Verify camera permissions, camera switching, retake, zoom, crop, file selection, all eight templates, 600 x 1800 PNG output, download behavior, offline queue persistence, reconnection retry, Drive upload, public link viewing, duplicate prevention, and responsive layouts.
 
 ## Acceptance criteria
 
 - No login is required.
-- A user can create a portrait 4 x 6 postcard PNG.
-- All five templates work with camera and selected images.
+- A user can create a 600 x 1800 px portrait photo-card PNG.
+- All eight templates work with camera and selected images.
+- Each template requests and renders only its configured number of photos.
 - The cached or installed PWA works offline.
 - Offline files remain queued until upload succeeds.
 - Online files are saved to the configured Drive folder.
