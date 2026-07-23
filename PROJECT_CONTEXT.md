@@ -12,10 +12,11 @@ RYTC Photo Card is a web PWA for taking or selecting a photo, placing it into a 
 | Production URL | photo-card.rytc.ac.th |
 | Frontend | Vite + React + Tailwind CSS |
 | Output | PNG |
-| Postcard | 4 x 6 inch, portrait |
-| Recommended canvas | 1200 x 1800 px |
+| Postcard | Portrait photo-card strip |
+| Canvas | 600 x 1800 px, matching the approved template files |
 | Theme | Green, white, yellow |
-| Templates | 5 colorful templates |
+| Templates | 8 approved templates |
+| Photos per template | 2 or 3 photos, defined independently for each template |
 | Logo | https://resume.rytc.ac.th/assets/rytc_logo-DMbLvb1_.png |
 | Required text | วิทยาลัยเทคนิคระยอง |
 | Date format | YYYY-MM-DD, for example 2026-07-18 |
@@ -29,8 +30,8 @@ RYTC Photo Card is a web PWA for taking or selecting a photo, placing it into a 
 ## User flow
 
 1. Open the PWA.
-2. Choose one of five templates.
-3. Open the camera or select an image from the device.
+2. Choose one of eight templates; the app shows whether it needs two or three photos.
+3. Fill each photo slot using the camera or an image from the device.
 4. Switch camera if needed.
 5. Capture, retake, zoom, and crop.
 6. Preview the completed portrait postcard.
