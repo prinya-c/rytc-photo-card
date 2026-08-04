@@ -534,6 +534,29 @@ footer { padding: 35px 0 0; color: #95a197; font-size: .72rem; text-align: cente
   stroke-linejoin: round;
 }
 
+/* Camera action positions v0.9.1: keep edge controls from overlapping */
+.camera-actions .camera-switch-button {
+  top: auto;
+  bottom: 0;
+  left: max(16px, env(safe-area-inset-left));
+  right: auto;
+}
+.camera-actions .camera-close-button {
+  top: auto;
+  bottom: 0;
+  left: auto;
+  right: max(16px, env(safe-area-inset-right));
+}
+
+@media (max-width: 680px) {
+  .camera-actions .camera-switch-button {
+    left: max(12px, env(safe-area-inset-left));
+  }
+  .camera-actions .camera-close-button {
+    right: max(12px, env(safe-area-inset-right));
+  }
+}
+
 
 /* Gallery viewer and sharing v0.6.3 */
 .gallery-item {
