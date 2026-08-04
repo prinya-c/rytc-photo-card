@@ -40,9 +40,10 @@
 - Store pending PNG blobs and metadata in IndexedDB.
 - Show pending, uploading, uploaded, and failed states.
 - Detect reconnection with online events.
-- Retry pending uploads with bounded retries.
-- Retain failed items for manual retry.
-- Use a client request ID to avoid duplicate uploads.
+- Retry pending uploads automatically until they succeed or the device goes offline.
+- Reuse one stable client request ID for every retry of the same Photo Card.
+- Lock Save immediately, keep it disabled after success, and unlock it only when the composition changes.
+- Use the request ID as the IndexedDB and Gallery key so repeated work overwrites instead of duplicating.
 
 ## Phase 6: Google Apps Script backend
 
@@ -54,6 +55,7 @@ The backend should:
 - Decode the PNG and save it to the configured Google Drive folder.
 - Set anyone-with-link viewer permission.
 - Return success, request ID, Drive file ID, and view URL.
+- Use `LockService` around the request-ID check and Drive write so concurrent duplicate requests create only one file.
 - Keep DRIVE_FOLDER_ID in Apps Script Properties.
 - Never expose credentials in the React bundle.
 
@@ -75,4 +77,5 @@ Verify camera permissions, camera switching, retake, zoom, crop, file selection,
 - Offline files remain queued until upload succeeds.
 - Online files are saved to the configured Drive folder.
 - Returned Drive links open for anyone who has the link.
+- Repeated Save clicks and retries create only one Gallery item, one queue item, and one Drive file.
 - No Google credentials or secrets are committed.
