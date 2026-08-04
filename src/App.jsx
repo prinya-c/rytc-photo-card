@@ -821,12 +821,12 @@ function App() {
               </button>
               <button className="camera-icon-button camera-close-button" aria-label="ปิดกล้อง" title="ปิดกล้อง" onClick={() => { cancelAutoCapture(); stopCamera(); }}>×</button>
               {captureMode === "manual" && !autoCaptureRunning && <button className="camera-shutter" aria-label="ถ่ายภาพ" title="ถ่ายภาพ" onClick={capturePhoto}><span /></button>}
+              {captureMode === "auto" && !autoCaptureRunning && <button className="camera-shutter" aria-label="เริ่มถ่ายอัตโนมัติ" title="เริ่มถ่ายอัตโนมัติ" onClick={startAutoCapture}><span /></button>}
+              {captureMode === "auto" && autoCaptureRunning && <button className="camera-shutter camera-cancel-shutter" aria-label="ยกเลิกการถ่ายอัตโนมัติ" title="ยกเลิกการถ่ายอัตโนมัติ" onClick={() => cancelAutoCapture()}><span>×</span></button>}
             </div>}
           </div>
           <div className="control-row">
             {!cameraOpen && <button className="primary-button" onClick={() => startCamera()}>เปิดกล้อง</button>}
-            {cameraOpen && captureMode === "auto" && !autoCaptureRunning && <button className="primary-button" onClick={startAutoCapture}>เริ่มถ่ายอัตโนมัติ</button>}
-            {cameraOpen && autoCaptureRunning && <button className="auto-cancel-button" onClick={() => cancelAutoCapture()}>ยกเลิกการถ่ายอัตโนมัติ</button>}
             <label className={"secondary-button " + (autoCaptureRunning ? "control-disabled" : "")}>เลือกภาพ<input type="file" disabled={autoCaptureRunning} accept="image/*" onChange={(event) => setImageFromFile(event.target.files[0])} /></label>
             {photos[activePhotoSlot].dataUrl && <button className="secondary-button" disabled={autoCaptureRunning} onClick={() => updateActivePhoto({ dataUrl: "", zoom: 1, filterId: "original", filterIntensity: 100 })}>ล้างช่อง</button>}
           </div>
