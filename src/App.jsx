@@ -5,7 +5,7 @@ const APP_VERSION = "v" + packageJson.version;
 const LOGO_URL = "https://resume.rytc.ac.th/assets/rytc_logo-DMbLvb1_.png";
 const LOGO_EXPORT_URL = (import.meta.env.BASE_URL || "/") + "assets/rytc-logo-original.png";
 const UPLOAD_ENDPOINT = import.meta.env.VITE_UPLOAD_ENDPOINT || "";
-const CANVAS_WIDTH = 600;
+const CANVAS_WIDTH = 1200;
 const CANVAS_HEIGHT = 1800;
 const DB_NAME = "rytc-photo-card";
 const STORE_NAME = "pending-uploads";
@@ -16,78 +16,99 @@ const templates = [
   {
     id: "template-1",
     name: "RYTC Heart",
-    asset: TEMPLATE_BASE + "template-1.png",
+    asset: TEMPLATE_BASE + "1.png",
     slots: [
-      { x: 34, y: 493, width: 528, height: 360 },
-      { x: 34, y: 976, width: 528, height: 372 }
+      { x: 72, y: 411, width: 480, height: 433 },
+      { x: 73, y: 866, width: 480, height: 433 },
+      { x: 641, y: 411, width: 479, height: 433 },
+      { x: 641, y: 866, width: 480, height: 433 }
     ]
   },
   {
     id: "template-2",
     name: "Always Friends",
-    asset: TEMPLATE_BASE + "template-2.png",
+    asset: TEMPLATE_BASE + "2.png",
     slots: [
-      { x: 35, y: 335, width: 521, height: 395 },
-      { x: 35, y: 823, width: 521, height: 397 }
+      { x: 81, y: 331, width: 411, height: 331 },
+      { x: 81, y: 690, width: 411, height: 331 },
+      { x: 81, y: 1050, width: 411, height: 330 },
+      { x: 692, y: 331, width: 411, height: 330 },
+      { x: 692, y: 687, width: 411, height: 331 },
+      { x: 692, y: 1044, width: 411, height: 330 }
     ]
   },
   {
     id: "template-3",
     name: "Fresh Start",
-    asset: TEMPLATE_BASE + "template-3.png",
+    asset: TEMPLATE_BASE + "3.png",
     slots: [
-      { x: 28, y: 357, width: 544, height: 357 },
-      { x: 30, y: 729, width: 544, height: 356 },
-      { x: 33, y: 1100, width: 544, height: 356 }
+      { x: 88, y: 476, width: 443, height: 350 },
+      { x: 81, y: 879, width: 442, height: 350 },
+      { x: 670, y: 476, width: 442, height: 350 },
+      { x: 681, y: 879, width: 442, height: 350 }
     ]
   },
   {
     id: "template-4",
     name: "Snap the Moment",
-    asset: TEMPLATE_BASE + "template-4.png",
+    asset: TEMPLATE_BASE + "4.png",
     slots: [
-      { x: 37, y: 289, width: 533, height: 377 },
-      { x: 39, y: 697, width: 532, height: 377 },
-      { x: 37, y: 1107, width: 533, height: 377 }
+      { x: 72, y: 415, width: 467, height: 313 },
+      { x: 74, y: 803, width: 467, height: 313 },
+      { x: 74, y: 1180, width: 468, height: 313 },
+      { x: 656, y: 415, width: 467, height: 313 },
+      { x: 658, y: 803, width: 467, height: 313 },
+      { x: 658, y: 1180, width: 467, height: 313 }
     ]
   },
   {
     id: "template-5",
     name: "Let's Go",
-    asset: TEMPLATE_BASE + "template-5.png",
+    asset: TEMPLATE_BASE + "5.png",
     slots: [
-      { x: 74, y: 236, width: 439, height: 342 },
-      { x: 74, y: 624, width: 439, height: 343 },
-      { x: 74, y: 1012, width: 439, height: 343 }
+      { x: 68, y: 364, width: 489, height: 352 },
+      { x: 71, y: 797, width: 488, height: 353 },
+      { x: 650, y: 364, width: 488, height: 352 },
+      { x: 652, y: 797, width: 489, height: 353 }
     ]
   },
   {
     id: "template-6",
     name: "Special Moment",
-    asset: TEMPLATE_BASE + "template-6.png",
+    asset: TEMPLATE_BASE + "6.png",
     slots: [
-      { x: 44, y: 321, width: 520, height: 376 },
-      { x: 47, y: 782, width: 520, height: 376 }
+      { x: 49, y: 361, width: 494, height: 359 },
+      { x: 49, y: 732, width: 495, height: 388 },
+      { x: 49, y: 1132, width: 495, height: 387 },
+      { x: 656, y: 361, width: 495, height: 359 },
+      { x: 656, y: 732, width: 495, height: 388 },
+      { x: 656, y: 1132, width: 495, height: 387 }
     ]
   },
   {
     id: "template-7",
     name: "RYTC Photo Card",
-    asset: TEMPLATE_BASE + "template-7.png",
+    asset: TEMPLATE_BASE + "7.png",
     slots: [
-      { x: 42, y: 263, width: 533, height: 383 },
-      { x: 42, y: 647, width: 533, height: 404 },
-      { x: 42, y: 1072, width: 533, height: 383 }
+      { x: 104, y: 317, width: 392, height: 324 },
+      { x: 103, y: 683, width: 393, height: 324 },
+      { x: 103, y: 1050, width: 393, height: 324 },
+      { x: 690, y: 317, width: 392, height: 324 },
+      { x: 689, y: 684, width: 393, height: 324 },
+      { x: 689, y: 1050, width: 393, height: 324 }
     ]
   },
   {
     id: "template-8",
     name: "Information Technology",
-    asset: TEMPLATE_BASE + "template-8.png",
+    asset: TEMPLATE_BASE + "8.png",
     slots: [
-      { x: 91, y: 415, width: 467, height: 314 },
-      { x: 93, y: 803, width: 467, height: 314 },
-      { x: 93, y: 1180, width: 467, height: 314 }
+      { x: 77, y: 333, width: 434, height: 384 },
+      { x: 77, y: 770, width: 434, height: 385 },
+      { x: 77, y: 1208, width: 434, height: 384 },
+      { x: 671, y: 333, width: 433, height: 384 },
+      { x: 671, y: 770, width: 433, height: 385 },
+      { x: 671, y: 1208, width: 433, height: 384 }
     ]
   }
 ];
@@ -420,6 +441,7 @@ function App() {
     const reader = new FileReader();
     reader.onload = () => {
       updateActivePhoto({ dataUrl: reader.result, zoom: 1, filterId: "original", filterIntensity: 100 });
+      setActivePhotoSlot((current) => Math.min(current + 1, selectedTemplate.slots.length - 1));
       setActiveStep(2);
       setStatus("เลือกรูปที่ " + (activePhotoSlot + 1) + " แล้ว");
     };
@@ -444,6 +466,7 @@ function App() {
     }
     context.drawImage(video, sourceX, sourceY, size, size, 0, 0, size, size);
     updateActivePhoto({ dataUrl: canvas.toDataURL("image/jpeg", 0.92), zoom: 1, filterId: "original", filterIntensity: 100 });
+    setActivePhotoSlot((current) => Math.min(current + 1, selectedTemplate.slots.length - 1));
     setActiveStep(2);
     setStatus("ถ่ายรูปที่ " + (activePhotoSlot + 1) + " แล้ว");
     stopCamera();
