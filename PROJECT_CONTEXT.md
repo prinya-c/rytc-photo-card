@@ -26,6 +26,7 @@ RYTC Photo Card is a web PWA for taking or selecting a photo, placing it into a 
 | Drive filename | Timestamp-based |
 | Backend | Google Apps Script Web App |
 | Offline | Save locally and upload pending files after reconnection |
+| Duplicate prevention | One save operation and one stable request ID per unchanged Photo Card |
 
 ## User flow
 
@@ -39,6 +40,10 @@ RYTC Photo Card is a web PWA for taking or selecting a photo, placing it into a 
 8. Upload the PNG to Google Drive when online.
 9. If offline, place the upload in an IndexedDB queue.
 10. Retry queued uploads when connectivity returns.
+
+The Save button is locked immediately while saving and remains in the
+"บันทึกแล้ว" state after success. Editing a photo, filter, zoom value, or
+template starts a new save operation. All retries reuse the original request ID.
 
 ## Technical constraints
 
