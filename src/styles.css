@@ -534,6 +534,20 @@ footer { padding: 35px 0 0; color: #95a197; font-size: .72rem; text-align: cente
   stroke-linejoin: round;
 }
 
+/* Automatic capture v0.9.3: reuse the shutter position for start/cancel */
+.camera-cancel-shutter {
+  border-color: #fff;
+  background: #b83232;
+}
+.camera-cancel-shutter span {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
 /* Camera action positions v0.9.1: keep edge controls from overlapping */
 .camera-actions .camera-switch-button {
   top: auto;
