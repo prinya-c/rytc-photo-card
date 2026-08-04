@@ -94,7 +94,6 @@ function doPost(event) {
     if (existingFiles.hasNext()) {
       const existingFile = existingFiles.next();
       const existingViewUrl = createViewUrl(existingFile.getId());
-      trySetSharing(existingFile);
       saveUploadRecordSafely(
         properties,
         propertyKey,
@@ -118,16 +117,9 @@ function doPost(event) {
       file.setDescription(
         "RYTC Photo Card\nRequest ID: " + body.requestId + "\nUploaded: " + new Date().toISOString()
       );
-      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      // ใช้สิทธิ์ Full/Editor ที่สืบทอดจากโฟลเดอร์ ไม่ลดสิทธิ์ไฟล์ซ้ำด้วย setSharing()
     } catch (fileError) {
-      if (file) {
-        try {
-          file.setTrashed(true);
-        } catch (trashError) {
-          console.error("ไม่สามารถย้ายไฟล์ที่สร้างไม่สมบูรณ์เข้าถังขยะได้", trashError);
-        }
-      }
-      throw createError("ไม่สามารถสร้างหรือตั้งค่ารูปภาพได้: " + fileError.message, "FILE_CREATION_FAILED", false);
+      throw createError("ไม่สามารถสร้างไฟล์รูปภาพได้: " + fileError.message, "FILE_CREATION_FAILED", false);
     }
 
     const fileId = file.getId();
@@ -201,16 +193,6 @@ function safeFilename(filename) {
 
 function createViewUrl(fileId) {
   return "https://drive.google.com/file/d/" + fileId + "/view";
-}
-
-function trySetSharing(file) {
-  try {
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    return true;
-  } catch (error) {
-    console.error("ไม่สามารถตั้งค่า Sharing ให้ไฟล์เดิมได้", error);
-    return false;
-  }
 }
 
 function createUploadRecord(requestId, fileId, viewUrl, filename) {
