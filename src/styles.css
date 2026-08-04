@@ -331,6 +331,18 @@ footer { padding: 35px 0 0; color: #95a197; font-size: .72rem; text-align: cente
 .photo-slot > span { display: grid; place-content: center; gap: 3px; min-height: 72px; font-size: .68rem; font-weight: 900; }
 .photo-slot small { font-size: .55rem; font-weight: 600; }
 .slot-status { margin: 0 0 7px; color: #17804a; font-size: .68rem; font-weight: 800; text-align: center; }
+.capture-mode-panel { display: grid; gap: 8px; margin-bottom: 10px; }
+.capture-mode-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; border-radius: 14px; background: #eff9e9; }
+.capture-mode-buttons button { min-height: 38px; border-radius: 10px; background: transparent; color: #718074; font-size: .72rem; font-weight: 900; }
+.capture-mode-buttons button.active { background: #17804a; color: #fff; box-shadow: 0 3px 0 #ffd43b; }
+.capture-mode-buttons button:disabled { cursor: not-allowed; opacity: .55; }
+.auto-timing-settings { display: grid; gap: 6px; }
+.auto-timing-settings > small { color: #819087; font-size: .56rem; text-align: center; }
+.countdown-stepper { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 5px 7px 5px 11px; border: 1px solid #d8e8d2; border-radius: 12px; background: #fff; color: #52645a; font-size: .66rem; font-weight: 800; }
+.stepper-controls { display: grid; grid-template-columns: 34px minmax(70px, auto) 34px; align-items: center; gap: 4px; }
+.stepper-controls button { min-height: 34px; border: 1px solid #cfe2c8; border-radius: 9px; background: #eff9e9; color: #17804a; font-size: 1.1rem; font-weight: 900; line-height: 1; }
+.stepper-controls button:disabled { cursor: not-allowed; opacity: .4; }
+.stepper-controls strong { color: #173b2b; font-size: .66rem; text-align: center; white-space: nowrap; }
 .poster-preview { position: relative; overflow: hidden; width: min(100%, 560px); aspect-ratio: 2 / 3; margin: 0 auto; border-radius: 14px; background: #fff; }
 .poster-template-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .poster-photo { position: absolute; z-index: 1; width: 40%; height: 26.67%; object-fit: cover; transform-origin: center; }
@@ -376,6 +388,15 @@ footer { padding: 35px 0 0; color: #95a197; font-size: .72rem; text-align: cente
   display: block;
   pointer-events: none;
 }
+.camera-close-button { right: max(16px, env(safe-area-inset-right)); left: auto; font-size: 1.7rem; }
+.camera-icon-button:disabled { cursor: not-allowed; opacity: .4; }
+.countdown-overlay { position: absolute; z-index: 4; inset: 0; display: grid; place-content: center; justify-items: center; gap: 8px; color: #fff; text-shadow: 0 3px 14px rgba(0,0,0,.65); pointer-events: none; }
+.countdown-overlay strong { font-size: clamp(5rem, 20vw, 10rem); line-height: .9; }
+.countdown-overlay span { padding: 7px 13px; border-radius: 999px; background: rgba(23,59,43,.72); font-size: .8rem; font-weight: 900; }
+.capture-flash { position: absolute; z-index: 5; inset: 0; background: rgba(255,255,255,.9); pointer-events: none; animation: camera-flash .18s ease-out forwards; }
+@keyframes camera-flash { from { opacity: 1; } to { opacity: 0; } }
+.auto-cancel-button { min-height: 43px; padding: 0 15px; border-radius: 13px; background: #b83232; color: #fff; font-size: .78rem; font-weight: 900; }
+.control-disabled { cursor: not-allowed; opacity: .45; }
 .camera-icon-button,
 .camera-shutter {
   position: absolute;

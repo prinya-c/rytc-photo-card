@@ -10,6 +10,19 @@ const CANVAS_HEIGHT = 1800;
 const DB_NAME = "rytc-photo-card";
 const STORE_NAME = "pending-uploads";
 const GALLERY_STORE_NAME = "gallery-items";
+const AUTO_FIRST_DELAY_KEY = "rytc-auto-first-delay";
+const AUTO_BETWEEN_DELAY_KEY = "rytc-auto-between-delay";
+const MIN_AUTO_DELAY = 2;
+const MAX_AUTO_DELAY = 10;
+
+function loadAutoDelay(key, fallback) {
+  try {
+    const value = Number(window.localStorage.getItem(key));
+    return Number.isFinite(value) && value >= MIN_AUTO_DELAY && value <= MAX_AUTO_DELAY ? value : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 const TEMPLATE_BASE = (import.meta.env.BASE_URL || "/") + "templates/";
 const templates = [
@@ -271,6 +284,12 @@ function App() {
   const [activePhotoSlot, setActivePhotoSlot] = useState(0);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [facingMode, setFacingMode] = useState("environment");
+  const [captureMode, setCaptureMode] = useState("manual");
+  const [firstCaptureDelay, setFirstCaptureDelay] = useState(() => loadAutoDelay(AUTO_FIRST_DELAY_KEY, 5));
+  const [betweenCaptureDelay, setBetweenCaptureDelay] = useState(() => loadAutoDelay(AUTO_BETWEEN_DELAY_KEY, 3));
+  const [autoCaptureRunning, setAutoCaptureRunning] = useState(false);
+  const [countdown, setCountdown] = useState(null);
+  const [captureFlash, setCaptureFlash] = useState(false);
   const [status, setStatus] = useState("พร้อมสร้าง Photo Card");
   const [busy, setBusy] = useState(false);
   const [queueCount, setQueueCount] = useState(0);
@@ -284,6 +303,22 @@ function App() {
   const saveInProgressRef = useRef(false);
   const savedCompositionRef = useRef(false);
   const saveOperationRef = useRef(null);
+  const photosRef = useRef(photos);
+  const activePhotoSlotRef = useRef(activePhotoSlot);
+  const autoCaptureRef = useRef(false);
+  const captureLockRef = useRef(false);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(AUTO_FIRST_DELAY_KEY, String(firstCaptureDelay));
+      window.localStorage.setItem(AUTO_BETWEEN_DELAY_KEY, String(betweenCaptureDelay));
+    } catch {
+      // The camera remains usable when storage is unavailable.
+    }
+  }, [firstCaptureDelay, betweenCaptureDelay]);
+
+  useEffect(() => { photosRef.current = photos; }, [photos]);
+  useEffect(() => { activePhotoSlotRef.current = activePhotoSlot; }, [activePhotoSlot]);
 
   useEffect(() => {
     window.__RYTC_CAN_UPDATE = !busy && !cameraOpen;
@@ -352,8 +387,22 @@ function App() {
   }, [cameraOpen]);
 
   useEffect(() => {
-    if (activeStep !== 2 && cameraOpen) stopCamera();
+    if (activeStep !== 2 && cameraOpen) {
+      cancelAutoCapture();
+      stopCamera();
+    }
   }, [activeStep, cameraOpen, stopCamera]);
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.hidden && autoCaptureRef.current) {
+        cancelAutoCapture("หยุดการถ่ายอัตโนมัติ เพราะแอปไปทำงานเบื้องหลัง");
+        stopCamera();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [stopCamera]);
 
   useEffect(() => {
     refreshQueue();
@@ -416,18 +465,50 @@ function App() {
   }
 
   function updateActivePhoto(changes) {
-    setPhotos((current) => current.map((photo, index) => index === activePhotoSlot ? { ...photo, ...changes } : photo));
+    const slotIndex = activePhotoSlotRef.current;
+    const next = photosRef.current.map((photo, index) => index === slotIndex ? { ...photo, ...changes } : photo);
+    photosRef.current = next;
+    setPhotos(next);
+  }
+
+  function setActiveSlot(index) {
+    activePhotoSlotRef.current = index;
+    setActivePhotoSlot(index);
+  }
+
+  function nextEmptySlot(items, afterIndex) {
+    for (let index = afterIndex + 1; index < items.length; index += 1) {
+      if (!items[index].dataUrl) return index;
+    }
+    for (let index = 0; index <= afterIndex; index += 1) {
+      if (!items[index].dataUrl) return index;
+    }
+    return -1;
+  }
+
+  function replacePhotoAt(index, dataUrl) {
+    const next = photosRef.current.map((photo, photoIndex) => photoIndex === index
+      ? { dataUrl, zoom: 1, filterId: "original", filterIntensity: 100 }
+      : photo);
+    photosRef.current = next;
+    setPhotos(next);
+    return next;
   }
 
   function chooseTemplate(id) {
     const nextTemplate = templates.find((item) => item.id === id);
     if (!nextTemplate) return;
     setTemplateId(id);
-    setPhotos((current) => Array.from(
+    cancelAutoCapture();
+    setPhotos((current) => {
+      const next = Array.from(
       { length: nextTemplate.slots.length },
       (_, index) => current[index] || createEmptyPhoto()
-    ));
-    setActivePhotoSlot(0);
+      );
+      photosRef.current = next;
+      return next;
+    });
+    setActiveSlot(0);
     setPreviewSrc("");
     setActiveStep(2);
     setStatus("เลือก " + nextTemplate.name + " แล้ว · ต้องใช้ " + nextTemplate.slots.length + " รูป");
@@ -440,17 +521,22 @@ function App() {
     }
     const reader = new FileReader();
     reader.onload = () => {
-      updateActivePhoto({ dataUrl: reader.result, zoom: 1, filterId: "original", filterIntensity: 100 });
-      setActivePhotoSlot((current) => Math.min(current + 1, selectedTemplate.slots.length - 1));
+      const slotIndex = activePhotoSlotRef.current;
+      const nextPhotos = replacePhotoAt(slotIndex, reader.result);
+      const nextSlot = nextEmptySlot(nextPhotos, slotIndex);
+      if (nextSlot >= 0) setActiveSlot(nextSlot);
       setActiveStep(2);
-      setStatus("เลือกรูปที่ " + (activePhotoSlot + 1) + " แล้ว");
+      setStatus("เลือกรูปที่ " + (slotIndex + 1) + " แล้ว");
     };
     reader.readAsDataURL(file);
   }
 
-  function capturePhoto() {
+  function captureFrame(slotIndex) {
     const video = videoRef.current;
-    if (!video?.videoWidth || !video?.videoHeight) return;
+    if (!video?.videoWidth || !video?.videoHeight) {
+      setStatus("กล้องยังไม่พร้อม กรุณารอสักครู่");
+      return null;
+    }
     const size = Math.min(video.videoWidth, video.videoHeight);
     const sourceX = Math.floor((video.videoWidth - size) / 2);
     const sourceY = Math.floor((video.videoHeight - size) / 2);
@@ -465,11 +551,92 @@ function App() {
       context.scale(-1, 1);
     }
     context.drawImage(video, sourceX, sourceY, size, size, 0, 0, size, size);
-    updateActivePhoto({ dataUrl: canvas.toDataURL("image/jpeg", 0.92), zoom: 1, filterId: "original", filterIntensity: 100 });
-    setActivePhotoSlot((current) => Math.min(current + 1, selectedTemplate.slots.length - 1));
-    setActiveStep(2);
-    setStatus("ถ่ายรูปที่ " + (activePhotoSlot + 1) + " แล้ว");
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+    const nextPhotos = replacePhotoAt(slotIndex, dataUrl);
+    setCaptureFlash(true);
+    window.setTimeout(() => setCaptureFlash(false), 180);
+    navigator.vibrate?.(45);
+    return nextPhotos;
+  }
+
+  function finishCaptureSession() {
+    cancelAutoCapture();
     stopCamera();
+    setActiveStep(3);
+    setStatus("ถ่ายภาพครบแล้ว กรุณาตรวจสอบ Photo Card");
+  }
+
+  function capturePhoto() {
+    if (captureLockRef.current || autoCaptureRef.current) return;
+    captureLockRef.current = true;
+    try {
+      const slotIndex = activePhotoSlotRef.current;
+      const nextPhotos = captureFrame(slotIndex);
+      if (!nextPhotos) return;
+      const nextSlot = nextEmptySlot(nextPhotos, slotIndex);
+      setStatus("ถ่ายรูปที่ " + (slotIndex + 1) + " แล้ว");
+      if (nextSlot >= 0) setActiveSlot(nextSlot);
+      else finishCaptureSession();
+    } finally {
+      captureLockRef.current = false;
+    }
+  }
+
+  const waitCountdownSecond = () => new Promise((resolve) => window.setTimeout(resolve, 1000));
+
+  function cancelAutoCapture(message = "ยกเลิกการถ่ายอัตโนมัติแล้ว") {
+    if (!autoCaptureRef.current && !autoCaptureRunning) return;
+    autoCaptureRef.current = false;
+    setAutoCaptureRunning(false);
+    setCountdown(null);
+    if (message) setStatus(message);
+  }
+
+  async function startAutoCapture() {
+    if (autoCaptureRef.current || captureLockRef.current) return;
+    if (!cameraOpen || !videoRef.current?.videoWidth) {
+      setStatus("กรุณาเปิดกล้องและรอให้ภาพพร้อมก่อนเริ่มถ่ายอัตโนมัติ");
+      return;
+    }
+    const targets = photosRef.current
+      .map((photo, index) => photo.dataUrl ? -1 : index)
+      .filter((index) => index >= 0);
+    if (!targets.length) {
+      setStatus("รูปครบทุกช่องแล้ว กรุณาล้างช่องที่ต้องการถ่ายใหม่");
+      return;
+    }
+
+    autoCaptureRef.current = true;
+    setAutoCaptureRunning(true);
+    try {
+      for (let targetIndex = 0; targetIndex < targets.length; targetIndex += 1) {
+        if (!autoCaptureRef.current) return;
+        const slotIndex = targets[targetIndex];
+        setActiveSlot(slotIndex);
+        const seconds = targetIndex === 0 ? firstCaptureDelay : betweenCaptureDelay;
+        setStatus("เตรียมถ่ายรูปที่ " + (slotIndex + 1) + " จาก " + photosRef.current.length);
+        for (let remaining = seconds; remaining > 0; remaining -= 1) {
+          if (!autoCaptureRef.current) return;
+          setCountdown(remaining);
+          if (remaining === 1) navigator.vibrate?.([40, 40, 40]);
+          await waitCountdownSecond();
+        }
+        if (!autoCaptureRef.current) return;
+        setCountdown(null);
+        const nextPhotos = captureFrame(slotIndex);
+        if (!nextPhotos) throw new Error("กล้องไม่พร้อมสำหรับรูปที่ " + (slotIndex + 1));
+        setStatus("ถ่ายรูปที่ " + (slotIndex + 1) + " แล้ว");
+        await new Promise((resolve) => window.setTimeout(resolve, 250));
+      }
+      if (autoCaptureRef.current) finishCaptureSession();
+    } catch (error) {
+      autoCaptureRef.current = false;
+      setStatus(error.message);
+    } finally {
+      autoCaptureRef.current = false;
+      setAutoCaptureRunning(false);
+      setCountdown(null);
+    }
   }
 
   function drawCover(ctx, image, x, y, width, height, scale = 1, filter = "none") {
@@ -609,9 +776,34 @@ function App() {
 
         <div className={"panel step-panel step-panel-2 " + (activeStep === 2 ? "active" : "")}>
           <div className="section-heading"><span className="step-number">02</span><div><h3>เพิ่มรูปภาพ {selectedTemplate.slots.length} ช่อง</h3><p>เลือกช่อง แล้วถ่ายภาพหรือเลือกรูปจากเครื่อง</p></div></div>
+          <div className="capture-mode-panel">
+            <div className="capture-mode-buttons" role="group" aria-label="โหมดถ่ายภาพ">
+              <button className={captureMode === "manual" ? "active" : ""} disabled={autoCaptureRunning} onClick={() => setCaptureMode("manual")}>ถ่ายทีละรูป</button>
+              <button className={captureMode === "auto" ? "active" : ""} disabled={autoCaptureRunning} onClick={() => setCaptureMode("auto")}>ถ่ายอัตโนมัติ</button>
+            </div>
+            {captureMode === "auto" && <div className="auto-timing-settings" aria-label="ตั้งเวลาถ่ายอัตโนมัติ">
+              <div className="countdown-stepper">
+                <span>เตรียมก่อนภาพแรก</span>
+                <div className="stepper-controls">
+                  <button type="button" aria-label="ลดเวลาเตรียมก่อนภาพแรก" disabled={autoCaptureRunning || firstCaptureDelay <= MIN_AUTO_DELAY} onClick={() => setFirstCaptureDelay((value) => Math.max(MIN_AUTO_DELAY, value - 1))}>−</button>
+                  <strong>{firstCaptureDelay} วินาที</strong>
+                  <button type="button" aria-label="เพิ่มเวลาเตรียมก่อนภาพแรก" disabled={autoCaptureRunning || firstCaptureDelay >= MAX_AUTO_DELAY} onClick={() => setFirstCaptureDelay((value) => Math.min(MAX_AUTO_DELAY, value + 1))}>+</button>
+                </div>
+              </div>
+              <div className="countdown-stepper">
+                <span>ระหว่างแต่ละรูป</span>
+                <div className="stepper-controls">
+                  <button type="button" aria-label="ลดเวลาระหว่างแต่ละรูป" disabled={autoCaptureRunning || betweenCaptureDelay <= MIN_AUTO_DELAY} onClick={() => setBetweenCaptureDelay((value) => Math.max(MIN_AUTO_DELAY, value - 1))}>−</button>
+                  <strong>{betweenCaptureDelay} วินาที</strong>
+                  <button type="button" aria-label="เพิ่มเวลาระหว่างแต่ละรูป" disabled={autoCaptureRunning || betweenCaptureDelay >= MAX_AUTO_DELAY} onClick={() => setBetweenCaptureDelay((value) => Math.min(MAX_AUTO_DELAY, value + 1))}>+</button>
+                </div>
+              </div>
+              <small>ปรับได้ {MIN_AUTO_DELAY}–{MAX_AUTO_DELAY} วินาที และจำค่าที่เลือกล่าสุด</small>
+            </div>}
+          </div>
           <div className="photo-slot-grid" style={{ gridTemplateColumns: "repeat(" + photos.length + ", minmax(0, 1fr))" }}>
             {photos.map((photo, index) => (
-              <button key={index} className={"photo-slot " + (activePhotoSlot === index ? "active" : "")} onClick={() => setActivePhotoSlot(index)}>
+              <button key={index} disabled={autoCaptureRunning} className={"photo-slot " + (activePhotoSlot === index ? "active" : "")} onClick={() => setActiveSlot(index)}>
                 {photo.dataUrl ? <img src={photo.dataUrl} alt={"รูปที่ " + (index + 1)} /> : <span>รูปที่ {index + 1}<small>ยังไม่มีรูป</small></span>}
               </button>
             ))}
@@ -621,16 +813,22 @@ function App() {
             {photos[activePhotoSlot].dataUrl && !cameraOpen && <img className="camera-image-layer" src={photos[activePhotoSlot].dataUrl} alt={"รูปที่ " + (activePhotoSlot + 1)} style={{ transform: "scale(" + photos[activePhotoSlot].zoom + ")", filter: getFilterStyle(photos[activePhotoSlot].filterId, photos[activePhotoSlot].filterIntensity) }} />}
             {!photos[activePhotoSlot].dataUrl && !cameraOpen && <div className="empty-camera"><div className="camera-icon">⌾</div><strong>ยังไม่มีรูปช่องนี้</strong><span>ถ่ายด้วยกล้องหรือเลือกจากเครื่อง</span><button className="primary-button empty-camera-action" onClick={() => startCamera()}>ถ่ายด้วยกล้อง</button></div>}
             {cameraOpen && <video ref={videoRef} autoPlay playsInline muted className={facingMode === "user" ? "camera-mirror" : ""} />}
+            {cameraOpen && countdown !== null && <div className="countdown-overlay"><strong>{countdown}</strong><span>รูปที่ {activePhotoSlot + 1} จาก {selectedTemplate.slots.length}</span></div>}
+            {cameraOpen && captureFlash && <div className="capture-flash" />}
             {cameraOpen && <div className="camera-actions">
-              <button className="camera-icon-button camera-switch-button" aria-label="สลับกล้อง" title="สลับกล้อง" onClick={() => { const next = facingMode === "environment" ? "user" : "environment"; setFacingMode(next); startCamera(next); }}>
+              <button className="camera-icon-button camera-switch-button" disabled={autoCaptureRunning} aria-label="สลับกล้อง" title="สลับกล้อง" onClick={() => { const next = facingMode === "environment" ? "user" : "environment"; setFacingMode(next); startCamera(next); }}>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h9a4 4 0 0 1 3.7 2.5M17 17H8a4 4 0 0 1-3.7-2.5M18 5v4.5h-4.5M6 19v-4.5h4.5M12 9.2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6Z"/></svg>
               </button>
-              <button className="camera-shutter" aria-label="ถ่ายภาพ" title="ถ่ายภาพ" onClick={capturePhoto}><span /></button>
+              <button className="camera-icon-button camera-close-button" aria-label="ปิดกล้อง" title="ปิดกล้อง" onClick={() => { cancelAutoCapture(); stopCamera(); }}>×</button>
+              {captureMode === "manual" && !autoCaptureRunning && <button className="camera-shutter" aria-label="ถ่ายภาพ" title="ถ่ายภาพ" onClick={capturePhoto}><span /></button>}
             </div>}
           </div>
           <div className="control-row">
-            <label className="secondary-button">เลือกภาพ<input type="file" accept="image/*" onChange={(event) => setImageFromFile(event.target.files[0])} /></label>
-            {photos[activePhotoSlot].dataUrl && <button className="secondary-button" onClick={() => updateActivePhoto({ dataUrl: "", zoom: 1, filterId: "original", filterIntensity: 100 })}>ล้างช่อง</button>}
+            {!cameraOpen && <button className="primary-button" onClick={() => startCamera()}>เปิดกล้อง</button>}
+            {cameraOpen && captureMode === "auto" && !autoCaptureRunning && <button className="primary-button" onClick={startAutoCapture}>เริ่มถ่ายอัตโนมัติ</button>}
+            {cameraOpen && autoCaptureRunning && <button className="auto-cancel-button" onClick={() => cancelAutoCapture()}>ยกเลิกการถ่ายอัตโนมัติ</button>}
+            <label className={"secondary-button " + (autoCaptureRunning ? "control-disabled" : "")}>เลือกภาพ<input type="file" disabled={autoCaptureRunning} accept="image/*" onChange={(event) => setImageFromFile(event.target.files[0])} /></label>
+            {photos[activePhotoSlot].dataUrl && <button className="secondary-button" disabled={autoCaptureRunning} onClick={() => updateActivePhoto({ dataUrl: "", zoom: 1, filterId: "original", filterIntensity: 100 })}>ล้างช่อง</button>}
           </div>
           {photos[activePhotoSlot].dataUrl && <div className="zoom-control"><span>ซูม</span><input type="range" min="1" max="2.5" step=".05" value={photos[activePhotoSlot].zoom} onChange={(event) => updateActivePhoto({ zoom: Number(event.target.value) })} /><strong>{photos[activePhotoSlot].zoom.toFixed(1)}x</strong></div>}
           {photos[activePhotoSlot].dataUrl && <div className="filter-editor">
@@ -640,7 +838,7 @@ function App() {
             </div>
             {photos[activePhotoSlot].filterId !== "original" && <div className="filter-intensity"><span>ความแรง</span><input type="range" min="0" max="100" value={photos[activePhotoSlot].filterIntensity} onChange={(event) => updateActivePhoto({ filterIntensity: Number(event.target.value) })} /><strong>{photos[activePhotoSlot].filterIntensity}%</strong></div>}
           </div>}
-          <div className="step-actions"><button className="secondary-button" onClick={() => setActiveStep(1)}>← เปลี่ยน Template</button><button className="primary-button" disabled={photos.some((photo) => !photo.dataUrl)} onClick={() => setActiveStep(3)}>ต่อไป: ตรวจสอบ →</button></div>
+          <div className="step-actions"><button className="secondary-button" disabled={autoCaptureRunning} onClick={() => setActiveStep(1)}>← เปลี่ยน Template</button><button className="primary-button" disabled={autoCaptureRunning || photos.some((photo) => !photo.dataUrl)} onClick={() => setActiveStep(3)}>ต่อไป: ตรวจสอบ →</button></div>
         </div>
 
         <div className={"panel preview-panel step-panel step-panel-3 " + (activeStep === 3 ? "active" : "")}>
