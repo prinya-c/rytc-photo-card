@@ -10,6 +10,19 @@ const CANVAS_HEIGHT = 1800;
 const DB_NAME = "rytc-photo-card";
 const STORE_NAME = "pending-uploads";
 const GALLERY_STORE_NAME = "gallery-items";
+const AUTO_FIRST_DELAY_KEY = "rytc-auto-first-delay";
+const AUTO_BETWEEN_DELAY_KEY = "rytc-auto-between-delay";
+const MIN_AUTO_DELAY = 2;
+const MAX_AUTO_DELAY = 10;
+
+function loadAutoDelay(key, fallback) {
+  try {
+    const value = Number(window.localStorage.getItem(key));
+    return Number.isFinite(value) && value >= MIN_AUTO_DELAY && value <= MAX_AUTO_DELAY ? value : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 const TEMPLATE_BASE = (import.meta.env.BASE_URL || "/") + "templates/";
 const templates = [
@@ -272,7 +285,8 @@ function App() {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [facingMode, setFacingMode] = useState("environment");
   const [captureMode, setCaptureMode] = useState("manual");
-  const [countdownPreset, setCountdownPreset] = useState("smart");
+  const [firstCaptureDelay, setFirstCaptureDelay] = useState(() => loadAutoDelay(AUTO_FIRST_DELAY_KEY, 5));
+  const [betweenCaptureDelay, setBetweenCaptureDelay] = useState(() => loadAutoDelay(AUTO_BETWEEN_DELAY_KEY, 3));
   const [autoCaptureRunning, setAutoCaptureRunning] = useState(false);
   const [countdown, setCountdown] = useState(null);
   const [captureFlash, setCaptureFlash] = useState(false);
@@ -293,6 +307,15 @@ function App() {
   const activePhotoSlotRef = useRef(activePhotoSlot);
   const autoCaptureRef = useRef(false);
   const captureLockRef = useRef(false);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(AUTO_FIRST_DELAY_KEY, String(firstCaptureDelay));
+      window.localStorage.setItem(AUTO_BETWEEN_DELAY_KEY, String(betweenCaptureDelay));
+    } catch {
+      // The camera remains usable when storage is unavailable.
+    }
+  }, [firstCaptureDelay, betweenCaptureDelay]);
 
   useEffect(() => { photosRef.current = photos; }, [photos]);
   useEffect(() => { activePhotoSlotRef.current = activePhotoSlot; }, [activePhotoSlot]);
@@ -590,9 +613,7 @@ function App() {
         if (!autoCaptureRef.current) return;
         const slotIndex = targets[targetIndex];
         setActiveSlot(slotIndex);
-        const seconds = countdownPreset === "smart"
-          ? (targetIndex === 0 ? 5 : 3)
-          : Number(countdownPreset);
+        const seconds = targetIndex === 0 ? firstCaptureDelay : betweenCaptureDelay;
         setStatus("เตรียมถ่ายรูปที่ " + (slotIndex + 1) + " จาก " + photosRef.current.length);
         for (let remaining = seconds; remaining > 0; remaining -= 1) {
           if (!autoCaptureRef.current) return;
@@ -760,13 +781,25 @@ function App() {
               <button className={captureMode === "manual" ? "active" : ""} disabled={autoCaptureRunning} onClick={() => setCaptureMode("manual")}>ถ่ายทีละรูป</button>
               <button className={captureMode === "auto" ? "active" : ""} disabled={autoCaptureRunning} onClick={() => setCaptureMode("auto")}>ถ่ายอัตโนมัติ</button>
             </div>
-            {captureMode === "auto" && <label className="countdown-setting">เวลานับถอยหลัง
-              <select value={countdownPreset} disabled={autoCaptureRunning} onChange={(event) => setCountdownPreset(event.target.value)}>
-                <option value="smart">ภาพแรก 5 วิ · ภาพถัดไป 3 วิ</option>
-                <option value="3">3 วินาทีทุกภาพ</option>
-                <option value="5">5 วินาทีทุกภาพ</option>
-              </select>
-            </label>}
+            {captureMode === "auto" && <div className="auto-timing-settings" aria-label="ตั้งเวลาถ่ายอัตโนมัติ">
+              <div className="countdown-stepper">
+                <span>เตรียมก่อนภาพแรก</span>
+                <div className="stepper-controls">
+                  <button type="button" aria-label="ลดเวลาเตรียมก่อนภาพแรก" disabled={autoCaptureRunning || firstCaptureDelay <= MIN_AUTO_DELAY} onClick={() => setFirstCaptureDelay((value) => Math.max(MIN_AUTO_DELAY, value - 1))}>−</button>
+                  <strong>{firstCaptureDelay} วินาที</strong>
+                  <button type="button" aria-label="เพิ่มเวลาเตรียมก่อนภาพแรก" disabled={autoCaptureRunning || firstCaptureDelay >= MAX_AUTO_DELAY} onClick={() => setFirstCaptureDelay((value) => Math.min(MAX_AUTO_DELAY, value + 1))}>+</button>
+                </div>
+              </div>
+              <div className="countdown-stepper">
+                <span>ระหว่างแต่ละรูป</span>
+                <div className="stepper-controls">
+                  <button type="button" aria-label="ลดเวลาระหว่างแต่ละรูป" disabled={autoCaptureRunning || betweenCaptureDelay <= MIN_AUTO_DELAY} onClick={() => setBetweenCaptureDelay((value) => Math.max(MIN_AUTO_DELAY, value - 1))}>−</button>
+                  <strong>{betweenCaptureDelay} วินาที</strong>
+                  <button type="button" aria-label="เพิ่มเวลาระหว่างแต่ละรูป" disabled={autoCaptureRunning || betweenCaptureDelay >= MAX_AUTO_DELAY} onClick={() => setBetweenCaptureDelay((value) => Math.min(MAX_AUTO_DELAY, value + 1))}>+</button>
+                </div>
+              </div>
+              <small>ปรับได้ {MIN_AUTO_DELAY}–{MAX_AUTO_DELAY} วินาที และจำค่าที่เลือกล่าสุด</small>
+            </div>}
           </div>
           <div className="photo-slot-grid" style={{ gridTemplateColumns: "repeat(" + photos.length + ", minmax(0, 1fr))" }}>
             {photos.map((photo, index) => (
