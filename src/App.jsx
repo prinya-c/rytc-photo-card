@@ -258,7 +258,11 @@ function App() {
   const [gallery, setGallery] = useState([]);
   const [previewSrc, setPreviewSrc] = useState("");
   const [selectedGalleryItem, setSelectedGalleryItem] = useState(null);
+  const [isCurrentCompositionSaved, setIsCurrentCompositionSaved] = useState(false);
   const retryRunningRef = useRef(false);
+  const saveInProgressRef = useRef(false);
+  const savedCompositionRef = useRef(false);
+  const saveOperationRef = useRef(null);
 
   useEffect(() => {
     window.__RYTC_CAN_UPDATE = !busy && !cameraOpen;
@@ -284,6 +288,10 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
+    saveOperationRef.current = null;
+    savedCompositionRef.current = false;
+    setIsCurrentCompositionSaved(false);
+    setLastUrl("");
     if (photos.some((photo) => !photo.dataUrl)) {
       setPreviewSrc("");
       return undefined;
@@ -476,11 +484,25 @@ function App() {
   }
 
   async function savePostcard() {
+    if (saveInProgressRef.current) return;
+    if (savedCompositionRef.current) {
+      setStatus("Photo Card นี้บันทึกแล้ว แก้ไขรูปหรือ Template ก่อนบันทึกงานใหม่");
+      return;
+    }
+    saveInProgressRef.current = true;
     setBusy(true);
     setLastUrl("");
     try {
       const dataUrl = await renderPostcard();
-      const item = { requestId: crypto.randomUUID(), filename: fileName(), dataUrl, createdAt: Date.now() };
+      if (!saveOperationRef.current) {
+        saveOperationRef.current = {
+          requestId: crypto.randomUUID(),
+          filename: fileName(),
+          dataUrl,
+          createdAt: Date.now()
+        };
+      }
+      const item = saveOperationRef.current;
       await saveGalleryItem({ galleryId: item.requestId, filename: item.filename, dataUrl: item.dataUrl, createdAt: item.createdAt, templateId, photoCount: selectedTemplate.slots.length });
       await refreshGallery();
       const link = document.createElement("a");
@@ -488,6 +510,8 @@ function App() {
       link.download = item.filename;
       link.click();
       await queueUpload(item);
+      savedCompositionRef.current = true;
+      setIsCurrentCompositionSaved(true);
       if (navigator.onLine && UPLOAD_ENDPOINT) {
         try {
           const result = await uploadUntilSuccess(item);
@@ -505,6 +529,7 @@ function App() {
     } catch (error) {
       setStatus(error.message);
     } finally {
+      saveInProgressRef.current = false;
       setBusy(false);
     }
   }
@@ -601,7 +626,7 @@ function App() {
             {previewSrc ? <img className="poster-rendered-preview" src={previewSrc} alt={"ตัวอย่าง " + selectedTemplate.name} /> : <div className="preview-placeholder">กรุณาใส่รูปให้ครบทั้ง {selectedTemplate.slots.length} ช่อง</div>}
           </div>
           <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="offscreen-canvas" />
-          <button className="save-button" disabled={photos.some((photo) => !photo.dataUrl) || busy} onClick={savePostcard}>{busy ? "กำลังบันทึก..." : "บันทึกเป็น PNG"}</button>
+          <button className="save-button" disabled={photos.some((photo) => !photo.dataUrl) || busy || isCurrentCompositionSaved} onClick={savePostcard}>{busy ? "กำลังบันทึก..." : isCurrentCompositionSaved ? "บันทึกแล้ว" : "บันทึกเป็น PNG"}</button>
           <p className="status-message">{status}</p>
           {lastUrl && <a className="drive-link" href={lastUrl} target="_blank" rel="noreferrer">เปิดรูปจาก Google Drive ↗</a>}
           {queueCount > 0 && <button className="queue-button" onClick={retryQueue}>มีไฟล์รออัปโหลด {queueCount} รายการ · ลองอีกครั้ง</button>}
