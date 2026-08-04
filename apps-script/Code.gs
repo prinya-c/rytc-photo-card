@@ -12,9 +12,15 @@ function doGet() {
 }
 
 function doPost(event) {
+  const lock = LockService.getScriptLock();
+  let hasLock = false;
+  let createdFile = null;
   try {
     const body = JSON.parse(event.postData.contents || "{}");
     validatePayload(body);
+
+    lock.waitLock(30000);
+    hasLock = true;
 
     const properties = PropertiesService.getScriptProperties();
     const existingUrl = properties.getProperty(CONFIG.requestPrefix + body.requestId);
@@ -35,25 +41,29 @@ function doPost(event) {
 
     const folder = DriveApp.getFolderById(folderId);
     const blob = Utilities.newBlob(bytes, "image/png", safeFilename(body.filename));
-    const file = folder.createFile(blob);
+    createdFile = folder.createFile(blob);
 
     try {
-      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      createdFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     } catch (sharingError) {
+      createdFile.setTrashed(true);
+      createdFile = null;
       throw new Error("ไม่สามารถตั้งค่า Anyone with the link ได้: " + sharingError.message);
     }
 
-    const viewUrl = "https://drive.google.com/file/d/" + file.getId() + "/view";
+    const viewUrl = "https://drive.google.com/file/d/" + createdFile.getId() + "/view";
     properties.setProperty(CONFIG.requestPrefix + body.requestId, viewUrl);
 
     return jsonResponse({
       success: true,
       requestId: body.requestId,
-      fileId: file.getId(),
+      fileId: createdFile.getId(),
       viewUrl
     });
   } catch (error) {
     return jsonResponse({ success: false, message: error.message });
+  } finally {
+    if (hasLock) lock.releaseLock();
   }
 }
 
