@@ -274,7 +274,96 @@ async function uploadItem(item) {
   return result;
 }
 
+function TemplateUploadPage() {
+  const [name, setName] = useState("");
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState("");
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [slots, setSlots] = useState([]);
+  const [status, setStatus] = useState("เลือกไฟล์ Template เพื่อเริ่มกำหนดช่องรูป");
+  const [busy, setBusy] = useState(false);
+
+  function chooseTemplateFile(selected) {
+    if (!selected) return;
+    if (!/^image\/(png|jpeg)$/.test(selected.type)) {
+      setStatus("รองรับเฉพาะไฟล์ PNG หรือ JPG");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        setFile(selected);
+        setPreview(reader.result);
+        setDimensions({ width: image.naturalWidth, height: image.naturalHeight });
+        setSlots([]);
+        setStatus("กำหนดกรอบช่องรูป แล้วกดบันทึก Template");
+      };
+      image.src = reader.result;
+    };
+    reader.readAsDataURL(selected);
+  }
+
+  function addSlot() {
+    const index = slots.length;
+    setSlots((items) => [...items, {
+      x: Math.round(dimensions.width * 0.1),
+      y: Math.round(dimensions.height * (0.12 + index * 0.18)),
+      width: Math.round(dimensions.width * 0.8),
+      height: Math.round(dimensions.height * 0.14)
+    }]);
+  }
+
+  function updateSlot(index, key, value) {
+    setSlots((items) => items.map((slot, slotIndex) => slotIndex === index ? { ...slot, [key]: Math.max(0, Number(value) || 0) } : slot));
+  }
+
+  async function saveTemplate() {
+    if (!file || !name.trim() || !slots.length) {
+      setStatus("กรุณาเลือกไฟล์ ตั้งชื่อ และเพิ่มช่องรูปอย่างน้อย 1 ช่อง");
+      return;
+    }
+    if (!UPLOAD_ENDPOINT) {
+      setStatus("ยังไม่ได้ตั้งค่า Google Apps Script Upload API");
+      return;
+    }
+    setBusy(true);
+    try {
+      const response = await fetch(UPLOAD_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "uploadTemplate",
+          requestId: "RYTC_TEMPLATE_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+          filename: file.name,
+          mimeType: file.type,
+          base64: preview.split(",")[1],
+          template: { name: name.trim(), width: dimensions.width, height: dimensions.height, slots }
+        })
+      });
+      const result = await response.json();
+      if (!result.success) throw new Error(result.message || "บันทึก Template ไม่สำเร็จ");
+      setStatus("บันทึก Template ลง Google Drive สำเร็จแล้ว");
+      setBusy(false);
+    } catch (error) {
+      setStatus(error.message);
+      setBusy(false);
+    }
+  }
+
+  return <main className="app-shell template-upload-page">
+    <header className="app-header"><div className="brand"><div className="brand-mark">RY</div><div><strong>RAYONG TECHNICAL COLLEGE</strong><span>RYTC Photo Card · Template Manager</span></div></div><a className="secondary-button" href="./">กลับหน้าหลัก</a></header>
+    <section className="panel template-upload-panel">
+      <div className="section-heading"><span className="step-number">T</span><div><h2>เพิ่ม Template</h2><p>อัปโหลดภาพ กำหนดช่องรูป และบันทึกข้อมูลลง Google Drive</p></div></div>
+      <div className="template-upload-form"><label>ชื่อ Template<input value={name} onChange={(event) => setName(event.target.value)} placeholder="เช่น กิจกรรมพิเศษ" /></label><label>ไฟล์ Template<input type="file" accept="image/png,image/jpeg" onChange={(event) => chooseTemplateFile(event.target.files[0])} /></label></div>
+      {preview && <div className="template-editor"><div className="template-editor-preview"><img src={preview} alt="Template preview" />{slots.map((slot, index) => <div key={index} className="template-slot-outline" style={{ left: (slot.x / dimensions.width * 100) + "%", top: (slot.y / dimensions.height * 100) + "%", width: (slot.width / dimensions.width * 100) + "%", height: (slot.height / dimensions.height * 100) + "%" }}><span>{index + 1}</span></div>)}</div><div className="template-slot-controls"><p>ขนาดจริง: {dimensions.width} × {dimensions.height} px · {slots.length} ช่อง</p><button className="secondary-button" type="button" onClick={addSlot}>+ เพิ่มช่องรูป</button>{slots.map((slot, index) => <fieldset key={index}><legend>ช่องที่ {index + 1}</legend>{["x", "y", "width", "height"].map((key) => <label key={key}>{key}<input type="number" min="0" value={slot[key]} onChange={(event) => updateSlot(index, key, event.target.value)} /></label>)}<button className="ghost-button" type="button" onClick={() => setSlots((items) => items.filter((_, slotIndex) => slotIndex !== index))}>ลบช่อง</button></fieldset>)}</div></div>}
+      <button className="primary-button" disabled={busy} onClick={saveTemplate}>{busy ? "กำลังบันทึก..." : "บันทึก Template"}</button><p className="status-message">{status}</p>
+    </section><footer>วิทยาลัยเทคนิคระยอง · RYTC Photo Card · {APP_VERSION}</footer>
+  </main>;
+}
+
 function App() {
+  if (new URLSearchParams(window.location.search).get("page") === "templates") return <TemplateUploadPage />;
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const canvasRef = useRef(null);

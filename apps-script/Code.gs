@@ -33,6 +33,10 @@ function doPost(event) {
       throw createError("ข้อมูลที่ส่งมาไม่ใช่ JSON ที่ถูกต้อง", "INVALID_JSON", false);
     }
 
+    if (body.action === "uploadTemplate") {
+      return handleTemplateUpload(body);
+    }
+
     validatePayload(body);
 
     const maxBase64Length = Math.ceil(CONFIG.maxBytes / 3) * 4 + 100;
@@ -158,6 +162,38 @@ function doPost(event) {
       }
     }
   }
+}
+
+function handleTemplateUpload(body) {
+  validateTemplatePayload(body);
+  const properties = PropertiesService.getScriptProperties();
+  const folderId = CONFIG.folderId || properties.getProperty(CONFIG.folderProperty);
+  if (!folderId) throw createError("ยังไม่ได้ตั้งค่า Google Drive Folder ID", "FOLDER_NOT_CONFIGURED", false);
+  const bytes = Utilities.base64Decode(body.base64);
+  if (bytes.length > CONFIG.maxBytes) throw createError("ไฟล์ Template มีขนาดใหญ่เกินกำหนด", "FILE_TOO_LARGE", false);
+  const folder = DriveApp.getFolderById(folderId);
+  const templateId = "template-" + body.requestId.replace(/[^a-zA-Z0-9]/g, "").slice(-12).toLowerCase();
+  const filename = safeFilename(body.filename);
+  const imageFile = folder.createFile(Utilities.newBlob(bytes, body.mimeType, templateId + "-" + filename));
+  const metadata = {
+    id: templateId,
+    name: body.template.name,
+    imageFileId: imageFile.getId(),
+    imageUrl: "https://drive.google.com/uc?export=view&id=" + imageFile.getId(),
+    width: body.template.width,
+    height: body.template.height,
+    slots: body.template.slots,
+    version: 1,
+    createdAt: new Date().toISOString()
+  };
+  folder.createFile(Utilities.newBlob(JSON.stringify(metadata, null, 2), "application/json", templateId + ".json"));
+  return jsonResponse({ success: true, template: metadata });
+}
+
+function validateTemplatePayload(body) {
+  if (!body.requestId || !body.filename || !body.base64 || !body.template) throw createError("ข้อมูล Template ไม่ครบถ้วน", "INVALID_TEMPLATE", false);
+  if (!["image/png", "image/jpeg"].includes(body.mimeType)) throw createError("รองรับเฉพาะ PNG หรือ JPG", "INVALID_TEMPLATE_TYPE", false);
+  if (!body.template.name || !body.template.width || !body.template.height || !Array.isArray(body.template.slots) || !body.template.slots.length) throw createError("กรุณาระบุชื่อ ขนาด และช่องรูปของ Template", "INVALID_TEMPLATE", false);
 }
 
 function validatePayload(body) {
