@@ -161,6 +161,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 const createEmptyPhoto = () => ({ dataUrl: "", zoom: 1, filterId: "original", filterIntensity: 100 });
 const loadImage = (src) => new Promise((resolve, reject) => {
   const image = new Image();
+  image.crossOrigin = "anonymous";
   image.onload = () => resolve(image);
   image.onerror = reject;
   image.src = src;

@@ -34,7 +34,14 @@ function listTemplates() {
       if (!file.getName().toLowerCase().endsWith(".json")) continue;
       try {
         const metadata = JSON.parse(file.getBlob().getDataAsString("UTF-8"));
-        if (metadata && metadata.id && Array.isArray(metadata.slots) && metadata.imageUrl) templates.push(metadata);
+        const imageFileId = metadata && (metadata.imageFileId || extractDriveFileId(metadata.imageUrl));
+        if (metadata && metadata.id && Array.isArray(metadata.slots) && imageFileId) {
+          templates.push({
+            ...metadata,
+            imageFileId,
+            imageUrl: createTemplateImageUrl(imageFileId)
+          });
+        }
       } catch (error) {
         console.error("ข้าม Metadata Template ที่อ่านไม่ได้", file.getName(), error);
       }
@@ -208,7 +215,7 @@ function handleTemplateUpload(body) {
     id: templateId,
     name: body.template.name,
     imageFileId: imageFile.getId(),
-    imageUrl: "https://drive.google.com/uc?export=view&id=" + imageFile.getId(),
+    imageUrl: createTemplateImageUrl(imageFile.getId()),
     width: body.template.width,
     height: body.template.height,
     slots: body.template.slots,
@@ -258,6 +265,18 @@ function safeFilename(filename) {
 
 function createViewUrl(fileId) {
   return "https://drive.google.com/file/d/" + fileId + "/view";
+}
+
+// ใช้ Googleusercontent โดยตรงเพื่อเลี่ยง Cross-Origin-Resource-Policy
+// ของ drive.usercontent.google.com ที่ทำให้รูปถูกบล็อกเมื่อฝังในหน้าเว็บ
+function createTemplateImageUrl(fileId) {
+  return "https://lh3.googleusercontent.com/d/" + encodeURIComponent(fileId);
+}
+
+function extractDriveFileId(url) {
+  const value = String(url || "");
+  const match = value.match(/(?:[?&]id=|\/d\/)([a-zA-Z0-9_-]+)/);
+  return match ? match[1] : "";
 }
 
 function createUploadRecord(requestId, fileId, viewUrl, filename) {
