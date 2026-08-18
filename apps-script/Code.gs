@@ -9,13 +9,41 @@ const CONFIG = {
   cleanupProperty: "RYTC_LAST_CLEANUP"
 };
 
-function doGet() {
+function doGet(event) {
+  if (event && event.parameter && event.parameter.action === "listTemplates") {
+    return listTemplates();
+  }
   return jsonResponse({
     success: true,
     service: "RYTC Photo Card Upload API",
     version: "2.0.0",
     timestamp: new Date().toISOString()
   });
+}
+
+function listTemplates() {
+  try {
+    const properties = PropertiesService.getScriptProperties();
+    const folderId = CONFIG.templateFolderId || properties.getProperty("TEMPLATE_FOLDER_ID");
+    if (!folderId) throw new Error("ยังไม่ได้ตั้งค่า Template Folder ID");
+    const folder = DriveApp.getFolderById(folderId);
+    const files = folder.getFiles();
+    const templates = [];
+    while (files.hasNext()) {
+      const file = files.next();
+      if (!file.getName().toLowerCase().endsWith(".json")) continue;
+      try {
+        const metadata = JSON.parse(file.getBlob().getDataAsString("UTF-8"));
+        if (metadata && metadata.id && Array.isArray(metadata.slots) && metadata.imageUrl) templates.push(metadata);
+      } catch (error) {
+        console.error("ข้าม Metadata Template ที่อ่านไม่ได้", file.getName(), error);
+      }
+    }
+    templates.sort((a, b) => String(a.name).localeCompare(String(b.name), "th"));
+    return jsonResponse({ success: true, templates });
+  } catch (error) {
+    return jsonResponse({ success: false, message: "ไม่สามารถโหลด Template จาก Google Drive ได้: " + error.message });
+  }
 }
 
 function doPost(event) {

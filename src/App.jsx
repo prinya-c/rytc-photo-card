@@ -25,7 +25,7 @@ function loadAutoDelay(key, fallback) {
 }
 
 const TEMPLATE_BASE = (import.meta.env.BASE_URL || "/") + "templates/";
-const templates = [
+const bundledTemplates = [
   {
     id: "template-1",
     name: "RYTC Heart",
@@ -367,9 +367,12 @@ function App() {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const canvasRef = useRef(null);
-  const [templateId, setTemplateId] = useState(templates[0].id);
+  const [driveTemplates, setDriveTemplates] = useState([]);
+  const [templateLoading, setTemplateLoading] = useState(true);
+  const [templateError, setTemplateError] = useState("");
+  const [templateId, setTemplateId] = useState("");
   const [activeStep, setActiveStep] = useState(1);
-  const [photos, setPhotos] = useState(() => Array.from({ length: templates[0].slots.length }, createEmptyPhoto));
+  const [photos, setPhotos] = useState([]);
   const [activePhotoSlot, setActivePhotoSlot] = useState(0);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [facingMode, setFacingMode] = useState("environment");
@@ -396,6 +399,38 @@ function App() {
   const activePhotoSlotRef = useRef(activePhotoSlot);
   const autoCaptureRef = useRef(false);
   const captureLockRef = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadDriveTemplates() {
+      setTemplateLoading(true);
+      setTemplateError("");
+      if (!UPLOAD_ENDPOINT) {
+        setTemplateError("ยังไม่ได้ตั้งค่า Google Apps Script Upload API");
+        setTemplateLoading(false);
+        return;
+      }
+      try {
+        const response = await fetch(UPLOAD_ENDPOINT + "?action=listTemplates");
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.message || "ไม่สามารถโหลด Template จาก Google Drive ได้");
+        const loaded = (result.templates || []).map((item) => ({ ...item, asset: item.imageUrl }));
+        if (!cancelled) {
+          setDriveTemplates(loaded);
+          if (loaded.length) {
+            setTemplateId(loaded[0].id);
+            setPhotos(Array.from({ length: loaded[0].slots.length }, createEmptyPhoto));
+          }
+        }
+      } catch (error) {
+        if (!cancelled) setTemplateError(error.message);
+      } finally {
+        if (!cancelled) setTemplateLoading(false);
+      }
+    }
+    loadDriveTemplates();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     try {
@@ -437,7 +472,7 @@ function App() {
     savedCompositionRef.current = false;
     setIsCurrentCompositionSaved(false);
     setLastUrl("");
-    if (photos.some((photo) => !photo.dataUrl)) {
+    if (!photos.length || photos.some((photo) => !photo.dataUrl)) {
       setPreviewSrc("");
       return undefined;
     }
@@ -585,7 +620,7 @@ function App() {
   }
 
   function chooseTemplate(id) {
-    const nextTemplate = templates.find((item) => item.id === id);
+    const nextTemplate = driveTemplates.find((item) => item.id === id);
     if (!nextTemplate) return;
     setTemplateId(id);
     cancelAutoCapture();
@@ -742,7 +777,7 @@ function App() {
   }
 
   async function renderPostcard() {
-    const selected = templates.find((item) => item.id === templateId);
+    const selected = driveTemplates.find((item) => item.id === templateId);
     if (photos.some((photo) => !photo.dataUrl)) {
       throw new Error("กรุณาใส่รูปให้ครบทั้ง " + selected.slots.length + " ช่อง");
     }
@@ -834,7 +869,10 @@ function App() {
     }
   }
 
-  const selectedTemplate = templates.find((item) => item.id === templateId);
+  const selectedTemplate = driveTemplates.find((item) => item.id === templateId);
+
+  if (templateLoading) return <main className="app-shell template-state-page"><section className="panel"><h2>กำลังโหลด Template</h2><p>กำลังอ่านรายการ Template จาก Google Drive...</p></section></main>;
+  if (templateError || !driveTemplates.length || !selectedTemplate) return <main className="app-shell template-state-page"><section className="panel"><h2>ไม่พบ Template</h2><p>{templateError || "ยังไม่มี Template ใน Google Drive"}</p><button className="primary-button" onClick={() => window.location.reload()}>ลองใหม่</button></section></main>;
 
   return (
     <main className="app-shell">
@@ -854,7 +892,7 @@ function App() {
         <div className={"panel step-panel step-panel-1 " + (activeStep === 1 ? "active" : "")}>
           <div className="section-heading"><span className="step-number">01</span><div><h3>เลือก Template</h3><p>มี 8 แบบ แต่ละแบบใช้จำนวนรูปต่างกัน</p></div></div>
           <div className="template-grid actual-template-grid">
-            {templates.map((item) => (
+            {driveTemplates.map((item) => (
               <button key={item.id} className={"template-option " + (item.id === templateId ? "selected" : "")} onClick={() => chooseTemplate(item.id)}>
                 <img src={item.asset} alt={item.name} /><strong>{item.name}<small>{item.slots.length} รูป</small></strong>
               </button>
