@@ -159,6 +159,9 @@ function getFilterStyle(id, intensity = 100) {
 
 const today = () => new Date().toISOString().slice(0, 10);
 const createEmptyPhoto = () => ({ dataUrl: "", zoom: 1, filterId: "original", filterIntensity: 100 });
+const templateAssetUrl = (template) => template.imageFileId
+  ? "https://lh3.googleusercontent.com/d/" + encodeURIComponent(template.imageFileId)
+  : template.imageUrl;
 const loadImage = (src) => new Promise((resolve, reject) => {
   const image = new Image();
   image.crossOrigin = "anonymous";
@@ -415,7 +418,7 @@ function App() {
         const response = await fetch(UPLOAD_ENDPOINT + "?action=listTemplates");
         const result = await response.json();
         if (!response.ok || !result.success) throw new Error(result.message || "ไม่สามารถโหลด Template จาก Google Drive ได้");
-        const loaded = (result.templates || []).map((item) => ({ ...item, asset: item.imageUrl }));
+        const loaded = (result.templates || []).map((item) => ({ ...item, asset: templateAssetUrl(item) }));
         if (!cancelled) {
           setDriveTemplates(loaded);
           if (loaded.length) {
