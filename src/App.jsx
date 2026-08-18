@@ -1065,10 +1065,34 @@ function App() {
     }
   }
 
+  function startNewSession() {
+    if (busy || autoCaptureRunning) return;
+    const hasCurrentWork = Boolean(templateId || previewSrc || photos.some((photo) => photo.dataUrl));
+    if (hasCurrentWork && !window.confirm("เริ่มงานใหม่หรือไม่? รูปและ Template ที่เลือกไว้จะถูกล้างออกจากหน้านี้")) return;
+
+    autoCaptureRef.current = false;
+    captureLockRef.current = false;
+    setAutoCaptureRunning(false);
+    setCountdown(null);
+    stopCamera();
+    setPhotos([]);
+    setTemplateId("");
+    setActivePhotoSlot(0);
+    setActiveStep(1);
+    setPreviewSrc("");
+    setLastUrl("");
+    setIsCurrentCompositionSaved(false);
+    setSelectedGalleryItem(null);
+    saveInProgressRef.current = false;
+    savedCompositionRef.current = false;
+    saveOperationRef.current = null;
+    setStatus("เริ่มงานใหม่แล้ว กรุณาเลือก Template");
+  }
+
   const selectedTemplate = driveTemplates.find((item) => item.id === templateId);
 
   if (templateLoading) return <main className="app-shell template-state-page"><section className="panel"><h2>กำลังโหลด Template</h2><p>กำลังอ่านรายการ Template จาก Google Drive...</p></section></main>;
-  if (templateError || !driveTemplates.length || !selectedTemplate) return <main className="app-shell template-state-page"><section className="panel"><h2>ไม่พบ Template</h2><p>{templateError || "ยังไม่มี Template ใน Google Drive"}</p><button className="primary-button" onClick={() => window.location.reload()}>ลองใหม่</button></section></main>;
+  if (templateError || !driveTemplates.length) return <main className="app-shell template-state-page"><section className="panel"><h2>ไม่พบ Template</h2><p>{templateError || "ยังไม่มี Template ใน Google Drive"}</p><button className="primary-button" onClick={() => window.location.reload()}>ลองใหม่</button></section></main>;
 
   return (
     <main className="app-shell">
@@ -1080,7 +1104,7 @@ function App() {
 
       <nav className="stepper" aria-label="ขั้นตอนการสร้าง Photo Card">
         {[["01", "แบบ", 1], ["02", "รูปภาพ", 2], ["03", "บันทึก", 3], ["04", "แกลเลอรี่", 4]].map(([number, label, step]) => (
-          <button key={step} className={activeStep === step ? "active" : ""} onClick={() => setActiveStep(step)}><span>{number}</span><b>{label}</b></button>
+          <button key={step} className={activeStep === step ? "active" : ""} disabled={step !== 1 && step !== 4 && !selectedTemplate} onClick={() => setActiveStep(step)}><span>{number}</span><b>{label}</b></button>
         ))}
       </nav>
 
@@ -1094,10 +1118,10 @@ function App() {
               </button>
             ))}
           </div>
-          <div className="step-actions"><button className="primary-button" onClick={() => setActiveStep(2)}>ต่อไป: เพิ่มรูปภาพ →</button></div>
+          <div className="step-actions"><button className="primary-button" disabled={!selectedTemplate} onClick={() => setActiveStep(2)}>ต่อไป: เพิ่มรูปภาพ →</button></div>
         </div>
 
-        <div className={"panel step-panel step-panel-2 " + (activeStep === 2 ? "active" : "")}>
+        {selectedTemplate && <div className={"panel step-panel step-panel-2 " + (activeStep === 2 ? "active" : "")}>
           <div className="section-heading"><span className="step-number">02</span><div><h3>เพิ่มรูปภาพ {selectedTemplate.slots.length} ช่อง</h3><p>เลือกช่อง แล้วถ่ายภาพหรือเลือกรูปจากเครื่อง</p></div></div>
           <div className="capture-mode-panel">
             <div className="capture-mode-buttons" role="group" aria-label="โหมดถ่ายภาพ">
@@ -1162,9 +1186,9 @@ function App() {
             {photos[activePhotoSlot].filterId !== "original" && <div className="filter-intensity"><span>ความแรง</span><input type="range" min="0" max="100" value={photos[activePhotoSlot].filterIntensity} onChange={(event) => updateActivePhoto({ filterIntensity: Number(event.target.value) })} /><strong>{photos[activePhotoSlot].filterIntensity}%</strong></div>}
           </div>}
           <div className="step-actions"><button className="secondary-button" disabled={autoCaptureRunning} onClick={() => setActiveStep(1)}>← เปลี่ยน Template</button><button className="primary-button" disabled={autoCaptureRunning || photos.some((photo) => !photo.dataUrl)} onClick={() => setActiveStep(3)}>ต่อไป: ตรวจสอบ →</button></div>
-        </div>
+        </div>}
 
-        <div className={"panel preview-panel step-panel step-panel-3 " + (activeStep === 3 ? "active" : "")}>
+        {selectedTemplate && <div className={"panel preview-panel step-panel step-panel-3 " + (activeStep === 3 ? "active" : "")}>
           <div className="section-heading"><span className="step-number">03</span><div><h3>ตรวจสอบ Photo Card</h3><p>รูปทั้ง {selectedTemplate.slots.length} ช่องจะถูกวางใน Template ที่เลือก</p></div></div>
           <div className="poster-preview">
             {previewSrc ? <img className="poster-rendered-preview" src={previewSrc} alt={"ตัวอย่าง " + selectedTemplate.name} /> : <div className="preview-placeholder">กรุณาใส่รูปให้ครบทั้ง {selectedTemplate.slots.length} ช่อง</div>}
@@ -1174,13 +1198,21 @@ function App() {
           <p className="status-message">{status}</p>
           {lastUrl && <a className="drive-link" href={lastUrl} target="_blank" rel="noreferrer">เปิดรูปจาก Google Drive ↗</a>}
           {queueCount > 0 && <button className="queue-button" onClick={retryQueue}>มีไฟล์รออัปโหลด {queueCount} รายการ · ลองอีกครั้ง</button>}
-        </div>
+        </div>}
 
         <div className={"panel gallery-panel step-panel step-panel-4 " + (activeStep === 4 ? "active" : "")}>
           <div className="section-heading"><span className="step-number">04</span><div><h3>แกลเลอรี่</h3><p>รวม Photo Card ที่สร้างจากแอปนี้ในเครื่อง</p></div></div>
           {gallery.length ? <div className="gallery-grid">{gallery.map((item) => <button className="gallery-item" key={item.galleryId} onClick={() => setSelectedGalleryItem(item)}><img src={item.dataUrl} alt={item.filename} /><span className="gallery-item-meta"><strong>{item.filename}</strong><span>{new Date(item.createdAt).toLocaleString("th-TH")}</span></span></button>)}</div> : <div className="gallery-empty"><strong>ยังไม่มีรูปในแกลเลอรี่</strong><span>เมื่อบันทึก Photo Card รูปจะมาแสดงที่นี่อัตโนมัติ</span></div>}
         </div>
       </section>
+      <button
+        className="new-session-button"
+        type="button"
+        disabled={busy || autoCaptureRunning || (!templateId && !previewSrc && !photos.some((photo) => photo.dataUrl))}
+        onClick={startNewSession}
+      >
+        เริ่มใหม่
+      </button>
       {selectedGalleryItem && <div className="gallery-modal" role="dialog" aria-modal="true" aria-label="ดูรูปภาพ" onClick={() => setSelectedGalleryItem(null)}>
         <div className="gallery-modal-card" onClick={(event) => event.stopPropagation()}>
           <button className="gallery-modal-close" aria-label="ปิด" onClick={() => setSelectedGalleryItem(null)}>×</button>

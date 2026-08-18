@@ -89,6 +89,8 @@ button { cursor: pointer; border: 0; }
 .offscreen-canvas { position: fixed; left: -9999px; top: -9999px; }
 .save-button { width: 100%; margin-top: 14px; min-height: 50px; border-radius: 15px; background: #ffd43b; color: #173b2b; font-weight: 900; }
 .save-button:disabled { cursor: not-allowed; opacity: .45; }
+.new-session-button { width: 100%; margin-top: 14px; min-height: 48px; border: 2px solid #17804a; border-radius: 15px; background: #eff9e9; color: #17804a; font-weight: 900; }
+.new-session-button:disabled { cursor: not-allowed; opacity: .45; }
 .status-message { min-height: 22px; margin: 12px 0 0; color: #718074; font-size: .75rem; text-align: center; }
 .drive-link, .queue-button { display: block; margin: 8px auto 0; color: #17804a; font-size: .75rem; text-align: center; font-weight: 800; background: none; }
 .queue-button { color: #bd7310; }
@@ -195,6 +197,7 @@ footer { padding: 35px 0 0; color: #95a197; font-size: .72rem; text-align: cente
   .preview-panel .section-heading { flex: 0 0 auto; }
   .postcard-preview { flex: 1; min-height: 0; height: auto; max-height: calc(100dvh - 190px); aspect-ratio: 2 / 3; width: auto; align-self: center; }
   .save-button { flex: 0 0 auto; min-height: 40px; margin-top: 8px; font-size: .75rem; }
+  .new-session-button { flex: 0 0 auto; min-height: 38px; margin-top: 8px; font-size: .72rem; }
   .status-message, .drive-link, .queue-button { font-size: .62rem; margin-top: 5px; }
   footer { flex: 0 0 auto; padding: 6px 0 0; font-size: .56rem; }
 }
