@@ -552,19 +552,29 @@ footer { padding: 35px 0 0; color: #95a197; font-size: .72rem; text-align: cente
 .template-state-page { min-height: 100dvh; display: grid; place-items: center; }
 .template-state-page .panel { width: min(100%, 560px); text-align: center; }
 .template-upload-panel { max-width: 1100px; margin: 24px auto 0; }
+.template-manager-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
 .template-upload-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
 .template-upload-form label, .template-slot-controls label { display: grid; gap: 5px; color: #52645a; font-size: .72rem; font-weight: 800; }
 .template-upload-form input, .template-slot-controls input { width: 100%; min-height: 38px; padding: 7px 9px; border: 1px solid #d8e8d2; border-radius: 10px; background: #fff; color: #173b2b; }
+.template-select-label { display: grid; gap: 6px; margin-bottom: 16px; color: #52645a; font-size: .72rem; font-weight: 800; }
+.template-select-label select { width: 100%; min-height: 42px; padding: 7px 10px; border: 1px solid #d8e8d2; border-radius: 10px; background: #fff; color: #173b2b; }
 .template-editor { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(280px, 1fr); gap: 18px; align-items: start; margin-bottom: 16px; }
 .template-editor-preview { position: relative; width: min(100%, 520px); margin: 0 auto; overflow: hidden; border-radius: 14px; background: #f1f7ed; box-shadow: 0 8px 20px rgba(23,59,43,.12); }
 .template-editor-preview img { display: block; width: 100%; height: auto; }
 .template-slot-outline { position: absolute; border: 3px solid #ffd43b; background: rgba(23,128,74,.18); box-shadow: 0 0 0 2px #17804a; pointer-events: none; }
 .template-slot-outline span { position: absolute; top: -22px; left: -3px; padding: 2px 6px; border-radius: 7px 7px 0 0; background: #17804a; color: #fff; font-size: .68rem; font-weight: 900; }
+.editable-template-preview { touch-action: none; }
+.editable-slot { pointer-events: auto; cursor: move; touch-action: none; }
+.editable-slot.active { border-color: #ff8c00; background: rgba(255,140,0,.2); z-index: 2; }
+.template-slot-resize { position: absolute; right: -3px; bottom: -3px; width: 25px; height: 25px; padding: 0; border: 2px solid #fff; border-radius: 7px; background: #17804a; color: #fff; cursor: nwse-resize; line-height: 1; touch-action: none; }
 .template-slot-controls { display: grid; gap: 10px; }
 .template-slot-controls > p { margin: 0; color: #17804a; font-size: .75rem; font-weight: 800; }
+.template-editor-help { color: #7c8d7f !important; font-weight: 600 !important; }
 .template-slot-controls fieldset { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; padding: 10px; border: 1px solid #d8e8d2; border-radius: 12px; }
+.template-slot-controls fieldset.active { border-color: #ff8c00; box-shadow: 0 0 0 2px rgba(255,140,0,.15); }
 .template-slot-controls legend { grid-column: 1 / -1; color: #173b2b; font-size: .72rem; font-weight: 900; }
 .template-slot-controls fieldset .ghost-button { grid-column: 1 / -1; justify-self: start; }
+.template-manager-empty { display: grid; min-height: 260px; place-items: center; color: #7c8d7f; text-align: center; }
 @media (max-width: 680px) { .template-upload-form, .template-editor { grid-template-columns: 1fr; } .template-upload-panel { margin-top: 12px; } .template-slot-controls fieldset { grid-template-columns: repeat(2, 1fr); } }
 
 /* Camera action positions v0.9.1: keep edge controls from overlapping */
