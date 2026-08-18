@@ -1200,19 +1200,20 @@ function App() {
           {queueCount > 0 && <button className="queue-button" onClick={retryQueue}>มีไฟล์รออัปโหลด {queueCount} รายการ · ลองอีกครั้ง</button>}
         </div>}
 
+        <button
+          className="new-session-button"
+          type="button"
+          disabled={busy || autoCaptureRunning || (!templateId && !previewSrc && !photos.some((photo) => photo.dataUrl))}
+          onClick={startNewSession}
+        >
+          เริ่มใหม่
+        </button>
+
         <div className={"panel gallery-panel step-panel step-panel-4 " + (activeStep === 4 ? "active" : "")}>
           <div className="section-heading"><span className="step-number">04</span><div><h3>แกลเลอรี่</h3><p>รวม Photo Card ที่สร้างจากแอปนี้ในเครื่อง</p></div></div>
           {gallery.length ? <div className="gallery-grid">{gallery.map((item) => <button className="gallery-item" key={item.galleryId} onClick={() => setSelectedGalleryItem(item)}><img src={item.dataUrl} alt={item.filename} /><span className="gallery-item-meta"><strong>{item.filename}</strong><span>{new Date(item.createdAt).toLocaleString("th-TH")}</span></span></button>)}</div> : <div className="gallery-empty"><strong>ยังไม่มีรูปในแกลเลอรี่</strong><span>เมื่อบันทึก Photo Card รูปจะมาแสดงที่นี่อัตโนมัติ</span></div>}
         </div>
       </section>
-      <button
-        className="new-session-button"
-        type="button"
-        disabled={busy || autoCaptureRunning || (!templateId && !previewSrc && !photos.some((photo) => photo.dataUrl))}
-        onClick={startNewSession}
-      >
-        เริ่มใหม่
-      </button>
       {selectedGalleryItem && <div className="gallery-modal" role="dialog" aria-modal="true" aria-label="ดูรูปภาพ" onClick={() => setSelectedGalleryItem(null)}>
         <div className="gallery-modal-card" onClick={(event) => event.stopPropagation()}>
           <button className="gallery-modal-close" aria-label="ปิด" onClick={() => setSelectedGalleryItem(null)}>×</button>

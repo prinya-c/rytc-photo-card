@@ -89,7 +89,7 @@ button { cursor: pointer; border: 0; }
 .offscreen-canvas { position: fixed; left: -9999px; top: -9999px; }
 .save-button { width: 100%; margin-top: 14px; min-height: 50px; border-radius: 15px; background: #ffd43b; color: #173b2b; font-weight: 900; }
 .save-button:disabled { cursor: not-allowed; opacity: .45; }
-.new-session-button { width: 100%; margin-top: 14px; min-height: 48px; border: 2px solid #17804a; border-radius: 15px; background: #eff9e9; color: #17804a; font-weight: 900; }
+.new-session-button { grid-column: 1 / -1; width: 100%; margin-top: 14px; min-height: 48px; border: 2px solid #17804a; border-radius: 15px; background: #eff9e9; color: #17804a; font-weight: 900; }
 .new-session-button:disabled { cursor: not-allowed; opacity: .45; }
 .status-message { min-height: 22px; margin: 12px 0 0; color: #718074; font-size: .75rem; text-align: center; }
 .drive-link, .queue-button { display: block; margin: 8px auto 0; color: #17804a; font-size: .75rem; text-align: center; font-weight: 800; background: none; }
