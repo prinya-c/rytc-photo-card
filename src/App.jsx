@@ -278,7 +278,7 @@ async function uploadItem(item) {
   return result;
 }
 
-function TemplateUploadPage() {
+function TemplateUploadForm({ onSwitchToEdit }) {
   const [name, setName] = useState("");
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState("");
@@ -356,7 +356,7 @@ function TemplateUploadPage() {
   }
 
   return <main className="app-shell template-upload-page">
-    <header className="app-header"><div className="brand"><div className="brand-mark">RY</div><div><strong>RAYONG TECHNICAL COLLEGE</strong><span>RYTC Photo Card · Template Manager</span></div></div><a className="secondary-button" href="./">กลับหน้าหลัก</a></header>
+    <header className="app-header"><div className="brand"><div className="brand-mark">RY</div><div><strong>RAYONG TECHNICAL COLLEGE</strong><span>RYTC Photo Card · Template Manager</span></div></div><div className="template-manager-actions"><button className="secondary-button" type="button" onClick={onSwitchToEdit}>แก้ไข Template เดิม</button><a className="secondary-button" href="./">กลับหน้าหลัก</a></div></header>
     <section className="panel template-upload-panel">
       <div className="section-heading"><span className="step-number">T</span><div><h2>เพิ่ม Template</h2><p>อัปโหลดภาพ กำหนดช่องรูป และบันทึกข้อมูลลง Google Drive</p></div></div>
       <div className="template-upload-form"><label>ชื่อ Template<input value={name} onChange={(event) => setName(event.target.value)} placeholder="เช่น กิจกรรมพิเศษ" /></label><label>ไฟล์ Template<input type="file" accept="image/png,image/jpeg" onChange={(event) => chooseTemplateFile(event.target.files[0])} /></label></div>
@@ -364,6 +364,198 @@ function TemplateUploadPage() {
       <button className="primary-button" disabled={busy} onClick={saveTemplate}>{busy ? "กำลังบันทึก..." : "บันทึก Template"}</button><p className="status-message">{status}</p>
     </section><footer>วิทยาลัยเทคนิคระยอง · RYTC Photo Card · {APP_VERSION}</footer>
   </main>;
+}
+
+function TemplateEditorPage({ onSwitchToUpload }) {
+  const previewRef = useRef(null);
+  const dragRef = useRef(null);
+  const [templates, setTemplates] = useState([]);
+  const [selectedId, setSelectedId] = useState("");
+  const [slots, setSlots] = useState([]);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [activeSlot, setActiveSlot] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState("กำลังโหลด Template จาก Google Drive...");
+
+  const loadTemplates = useCallback(async () => {
+    if (!UPLOAD_ENDPOINT) throw new Error("ยังไม่ได้ตั้งค่า Google Apps Script Upload API");
+    const response = await fetch(UPLOAD_ENDPOINT + "?action=listTemplates");
+    const result = await response.json();
+    if (!response.ok || !result.success) throw new Error(result.message || "ไม่สามารถโหลด Template จาก Google Drive ได้");
+    return (result.templates || []).map((item) => ({ ...item, asset: templateAssetUrl(item) }));
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadTemplates()
+      .then((items) => {
+        if (cancelled) return;
+        setTemplates(items);
+        if (items.length) setSelectedId(items[0].id);
+        setStatus(items.length ? "เลือก Template ที่ต้องการแก้ไขได้เลย" : "ยังไม่มี Template ใน Google Drive");
+      })
+      .catch((error) => { if (!cancelled) setStatus(error.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [loadTemplates]);
+
+  const selectedTemplate = templates.find((item) => item.id === selectedId) || null;
+
+  useEffect(() => {
+    if (!selectedTemplate) {
+      setSlots([]);
+      setDimensions({ width: 0, height: 0 });
+      return;
+    }
+    setDimensions({ width: Number(selectedTemplate.width) || 0, height: Number(selectedTemplate.height) || 0 });
+    setSlots((selectedTemplate.slots || []).map((slot) => ({ ...slot })));
+    setActiveSlot(0);
+  }, [selectedTemplate]);
+
+  useEffect(() => {
+    const move = (event) => {
+      const drag = dragRef.current;
+      if (!drag || !previewRef.current) return;
+      const scaleX = dimensions.width / previewRef.current.getBoundingClientRect().width;
+      const scaleY = dimensions.height / previewRef.current.getBoundingClientRect().height;
+      const deltaX = Math.round((event.clientX - drag.startClientX) * scaleX);
+      const deltaY = Math.round((event.clientY - drag.startClientY) * scaleY);
+      setSlots((items) => items.map((slot, index) => {
+        if (index !== drag.index) return slot;
+        const start = drag.startSlot;
+        if (drag.mode === "resize") {
+          return {
+            ...slot,
+            width: Math.max(10, Math.min(dimensions.width - start.x, start.width + deltaX)),
+            height: Math.max(10, Math.min(dimensions.height - start.y, start.height + deltaY))
+          };
+        }
+        return {
+          ...slot,
+          x: Math.max(0, Math.min(dimensions.width - start.width, start.x + deltaX)),
+          y: Math.max(0, Math.min(dimensions.height - start.height, start.y + deltaY))
+        };
+      }));
+    };
+    const stop = () => { dragRef.current = null; };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", stop);
+    window.addEventListener("pointercancel", stop);
+    return () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", stop);
+      window.removeEventListener("pointercancel", stop);
+    };
+  }, [dimensions]);
+
+  function beginSlotGesture(event, index, mode) {
+    event.preventDefault();
+    event.stopPropagation();
+    setActiveSlot(index);
+    dragRef.current = {
+      index,
+      mode,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startSlot: { ...slots[index] }
+    };
+  }
+
+  function updateSlot(index, key, value) {
+    const numericValue = Math.max(0, Number(value) || 0);
+    setSlots((items) => items.map((slot, slotIndex) => {
+      if (slotIndex !== index) return slot;
+      const next = { ...slot, [key]: numericValue };
+      if (key === "x") next.x = Math.min(next.x, Math.max(0, dimensions.width - next.width));
+      if (key === "y") next.y = Math.min(next.y, Math.max(0, dimensions.height - next.height));
+      if (key === "width") next.width = Math.min(next.width, Math.max(10, dimensions.width - next.x));
+      if (key === "height") next.height = Math.min(next.height, Math.max(10, dimensions.height - next.y));
+      return next;
+    }));
+  }
+
+  function addSlot() {
+    if (!dimensions.width || !dimensions.height) return;
+    const size = Math.round(dimensions.width * 0.8);
+    const height = Math.round(dimensions.height * 0.14);
+    setSlots((items) => [...items, {
+      x: Math.round((dimensions.width - size) / 2),
+      y: Math.min(Math.round(dimensions.height * (0.12 + items.length * 0.18)), dimensions.height - height),
+      width: size,
+      height
+    }]);
+    setActiveSlot(slots.length);
+  }
+
+  function validateSlots() {
+    if (!selectedTemplate) return "กรุณาเลือก Template";
+    if (!dimensions.width || !dimensions.height) return "ไม่พบขนาดจริงของ Template";
+    if (!slots.length) return "ต้องมีช่องรูปอย่างน้อย 1 ช่อง";
+    for (let index = 0; index < slots.length; index += 1) {
+      const slot = slots[index];
+      if (slot.width < 10 || slot.height < 10) return "ช่องที่ " + (index + 1) + " มีขนาดเล็กเกินไป";
+      if (slot.x + slot.width > dimensions.width || slot.y + slot.height > dimensions.height) {
+        return "ช่องที่ " + (index + 1) + " เกินขอบภาพ Template";
+      }
+    }
+    return "";
+  }
+
+  async function saveTemplate() {
+    const validationError = validateSlots();
+    if (validationError) { setStatus(validationError); return; }
+    if (!UPLOAD_ENDPOINT) { setStatus("ยังไม่ได้ตั้งค่า Google Apps Script Upload API"); return; }
+    setBusy(true);
+    setStatus("กำลังบันทึกตำแหน่งช่องรูป...");
+    try {
+      const response = await fetch(UPLOAD_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "updateTemplate",
+          requestId: "RYTC_TEMPLATE_UPDATE_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+          templateId: selectedTemplate.id,
+          metadataFileId: selectedTemplate.metadataFileId || "",
+          template: {
+            name: selectedTemplate.name,
+            width: dimensions.width,
+            height: dimensions.height,
+            slots
+          }
+        })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.message || "บันทึกตำแหน่งไม่สำเร็จ");
+      const refreshed = await loadTemplates();
+      setTemplates(refreshed);
+      setStatus("บันทึกตำแหน่งช่องรูปสำเร็จแล้ว · สำรอง JSON เดิมไว้ใน Google Drive");
+    } catch (error) {
+      setStatus(error.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return <main className="app-shell template-upload-page">
+    <header className="app-header"><div className="brand"><div className="brand-mark">RY</div><div><strong>RAYONG TECHNICAL COLLEGE</strong><span>RYTC Photo Card · Template Manager</span></div></div><div className="template-manager-actions"><button className="secondary-button" type="button" onClick={onSwitchToUpload}>เพิ่ม Template ใหม่</button><a className="secondary-button" href="./">กลับหน้าหลัก</a></div></header>
+    <section className="panel template-upload-panel">
+      <div className="section-heading"><span className="step-number">E</span><div><h2>แก้ไขตำแหน่งช่องรูป</h2><p>แก้ไข Template เดิมจาก Google Drive โดยไม่ต้องอัปโหลดภาพใหม่</p></div></div>
+      {loading ? <div className="template-manager-empty">กำลังโหลดรายการ Template...</div> : !templates.length ? <div className="template-manager-empty">ยังไม่พบ Template ใน Google Drive</div> : <>
+        <label className="template-select-label">เลือก Template<select value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>{templates.map((item) => <option key={item.id} value={item.id}>{item.name} · {item.slots.length} ช่อง</option>)}</select></label>
+        {selectedTemplate && <div className="template-editor"><div ref={previewRef} className="template-editor-preview editable-template-preview"><img src={selectedTemplate.asset} alt={selectedTemplate.name} />{slots.map((slot, index) => <div key={index} className={"template-slot-outline editable-slot " + (activeSlot === index ? "active" : "")} style={{ left: (slot.x / dimensions.width * 100) + "%", top: (slot.y / dimensions.height * 100) + "%", width: (slot.width / dimensions.width * 100) + "%", height: (slot.height / dimensions.height * 100) + "%" }} onPointerDown={(event) => beginSlotGesture(event, index, "move")}><span>{index + 1}</span><button className="template-slot-resize" type="button" aria-label={"ปรับขนาดช่องที่ " + (index + 1)} onPointerDown={(event) => beginSlotGesture(event, index, "resize")}>↘</button></div>)}</div><div className="template-slot-controls"><p>ขนาดจริง: {dimensions.width} × {dimensions.height} px · {slots.length} ช่อง</p><p className="template-editor-help">ลากกรอบเพื่อย้ายตำแหน่ง · ลากมุมขวาล่างเพื่อปรับขนาด</p><button className="secondary-button" type="button" onClick={addSlot}>+ เพิ่มช่องรูป</button>{slots.map((slot, index) => <fieldset className={activeSlot === index ? "active" : ""} key={index} onClick={() => setActiveSlot(index)}><legend>ช่องที่ {index + 1}</legend>{["x", "y", "width", "height"].map((key) => <label key={key}>{key}<input type="number" min="0" value={slot[key]} onChange={(event) => updateSlot(index, key, event.target.value)} /></label>)}<button className="ghost-button" type="button" onClick={() => { setSlots((items) => items.filter((_, slotIndex) => slotIndex !== index)); setActiveSlot(Math.max(0, Math.min(activeSlot, slots.length - 2))); }}>ลบช่อง</button></fieldset>)}</div></div>}
+        <button className="primary-button" disabled={busy} onClick={saveTemplate}>{busy ? "กำลังบันทึก..." : "บันทึกตำแหน่ง Template"}</button>
+      </>}
+      <p className="status-message">{status}</p>
+    </section><footer>วิทยาลัยเทคนิคระยอง · RYTC Photo Card · {APP_VERSION}</footer>
+  </main>;
+}
+
+function TemplateUploadPage() {
+  const [mode, setMode] = useState("edit");
+  return mode === "edit"
+    ? <TemplateEditorPage onSwitchToUpload={() => setMode("upload")} />
+    : <TemplateUploadForm onSwitchToEdit={() => setMode("edit")} />;
 }
 
 function App() {

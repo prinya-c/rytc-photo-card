@@ -38,6 +38,7 @@ function listTemplates() {
         if (metadata && metadata.id && Array.isArray(metadata.slots) && imageFileId) {
           templates.push({
             ...metadata,
+            metadataFileId: file.getId(),
             imageFileId,
             imageUrl: createTemplateImageUrl(imageFileId)
           });
@@ -71,6 +72,9 @@ function doPost(event) {
 
     if (body.action === "uploadTemplate") {
       return handleTemplateUpload(body);
+    }
+    if (body.action === "updateTemplate") {
+      return handleTemplateUpdate(body);
     }
 
     validatePayload(body);
@@ -224,6 +228,108 @@ function handleTemplateUpload(body) {
   };
   folder.createFile(Utilities.newBlob(JSON.stringify(metadata, null, 2), "application/json", templateId + ".json"));
   return jsonResponse({ success: true, template: metadata });
+}
+
+function handleTemplateUpdate(body) {
+  validateTemplateUpdatePayload(body);
+  const properties = PropertiesService.getScriptProperties();
+  const folderId = CONFIG.templateFolderId || properties.getProperty("TEMPLATE_FOLDER_ID");
+  if (!folderId) throw createError("ยังไม่ได้ตั้งค่า Template Folder ID", "FOLDER_NOT_CONFIGURED", false);
+
+  const folder = DriveApp.getFolderById(folderId);
+  const metadataFile = findTemplateMetadataFile(folder, body.templateId, body.metadataFileId);
+  if (!metadataFile) throw createError("ไม่พบไฟล์ JSON ของ Template ที่ต้องการแก้ไข", "TEMPLATE_NOT_FOUND", false);
+
+  let currentMetadata;
+  try {
+    currentMetadata = JSON.parse(metadataFile.getBlob().getDataAsString("UTF-8"));
+  } catch (error) {
+    throw createError("ไฟล์ JSON ของ Template ไม่ถูกต้อง", "INVALID_TEMPLATE_METADATA", false);
+  }
+  if (!currentMetadata || currentMetadata.id !== body.templateId) {
+    throw createError("รหัส Template ไม่ตรงกับไฟล์ JSON", "TEMPLATE_ID_MISMATCH", false);
+  }
+
+  validateTemplateSlots(body.template.width, body.template.height, body.template.slots);
+  const backupName = safeFilename(
+    metadataFile.getName().replace(/\.json$/i, "") + ".backup-" + timestampForFilename() + ".json"
+  );
+  metadataFile.makeCopy(backupName, folder);
+
+  const updatedMetadata = {
+    ...currentMetadata,
+    name: body.template.name,
+    width: Number(body.template.width),
+    height: Number(body.template.height),
+    slots: body.template.slots,
+    imageFileId: currentMetadata.imageFileId || extractDriveFileId(currentMetadata.imageUrl),
+    imageUrl: createTemplateImageUrl(currentMetadata.imageFileId || extractDriveFileId(currentMetadata.imageUrl)),
+    version: (Number(currentMetadata.version) || 1) + 1,
+    updatedAt: new Date().toISOString()
+  };
+  metadataFile.setContent(JSON.stringify(updatedMetadata, null, 2));
+  return jsonResponse({
+    success: true,
+    template: {
+      ...updatedMetadata,
+      metadataFileId: metadataFile.getId()
+    },
+    backupFilename: backupName
+  });
+}
+
+function findTemplateMetadataFile(folder, templateId, metadataFileId) {
+  if (metadataFileId) {
+    try {
+      const file = DriveApp.getFileById(metadataFileId);
+      if (file.getName().toLowerCase().endsWith(".json")) return file;
+    } catch (error) {
+      console.error("ไม่สามารถเปิดไฟล์ Metadata ตาม ID ได้", metadataFileId, error);
+    }
+  }
+  const files = folder.getFiles();
+  while (files.hasNext()) {
+    const file = files.next();
+    if (!file.getName().toLowerCase().endsWith(".json")) continue;
+    try {
+      const metadata = JSON.parse(file.getBlob().getDataAsString("UTF-8"));
+      if (metadata && metadata.id === templateId) return file;
+    } catch (error) {
+      console.error("ข้าม Metadata Template ที่อ่านไม่ได้", file.getName(), error);
+    }
+  }
+  return null;
+}
+
+function validateTemplateUpdatePayload(body) {
+  if (!body || !body.templateId || !body.template) {
+    throw createError("ข้อมูลการแก้ไข Template ไม่ครบถ้วน", "INVALID_TEMPLATE_UPDATE", false);
+  }
+  if (!body.template.name || !body.template.width || !body.template.height || !Array.isArray(body.template.slots)) {
+    throw createError("กรุณาระบุชื่อ ขนาด และช่องรูปของ Template", "INVALID_TEMPLATE_UPDATE", false);
+  }
+}
+
+function validateTemplateSlots(width, height, slots) {
+  const templateWidth = Number(width);
+  const templateHeight = Number(height);
+  if (!Number.isFinite(templateWidth) || !Number.isFinite(templateHeight) || templateWidth <= 0 || templateHeight <= 0) {
+    throw createError("ขนาด Template ไม่ถูกต้อง", "INVALID_TEMPLATE_DIMENSIONS", false);
+  }
+  if (!slots.length) throw createError("ต้องมีช่องรูปอย่างน้อย 1 ช่อง", "EMPTY_TEMPLATE_SLOTS", false);
+  slots.forEach(function(slot, index) {
+    const values = [slot.x, slot.y, slot.width, slot.height].map(Number);
+    if (values.some(function(value) { return !Number.isFinite(value); }) || slot.width < 10 || slot.height < 10) {
+      throw createError("ช่องที่ " + (index + 1) + " มีค่าไม่ถูกต้อง", "INVALID_TEMPLATE_SLOT", false);
+    }
+    if (slot.x < 0 || slot.y < 0 || slot.x + slot.width > templateWidth || slot.y + slot.height > templateHeight) {
+      throw createError("ช่องที่ " + (index + 1) + " เกินขอบภาพ Template", "TEMPLATE_SLOT_OUT_OF_BOUNDS", false);
+    }
+  });
+}
+
+function timestampForFilename() {
+  return Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "Asia/Bangkok", "yyyyMMdd-HHmmss");
 }
 
 function validateTemplatePayload(body) {
