@@ -1,5 +1,6 @@
 const CONFIG = {
   folderId: "12lwFHPzuO4rWUmHRzxjSOQ-RBde6LYB_",
+  templateFolderId: "19pphOccOvJWxPbqs9NSzcmaptLlUKc29",
   folderProperty: "DRIVE_FOLDER_ID",
   maxBytes: 8 * 1024 * 1024,
   requestPrefix: "RYTC_UPLOADED_",
@@ -167,7 +168,7 @@ function doPost(event) {
 function handleTemplateUpload(body) {
   validateTemplatePayload(body);
   const properties = PropertiesService.getScriptProperties();
-  const folderId = CONFIG.folderId || properties.getProperty(CONFIG.folderProperty);
+  const folderId = CONFIG.templateFolderId || properties.getProperty("TEMPLATE_FOLDER_ID") || CONFIG.folderId || properties.getProperty(CONFIG.folderProperty);
   if (!folderId) throw createError("ยังไม่ได้ตั้งค่า Google Drive Folder ID", "FOLDER_NOT_CONFIGURED", false);
   const bytes = Utilities.base64Decode(body.base64);
   if (bytes.length > CONFIG.maxBytes) throw createError("ไฟล์ Template มีขนาดใหญ่เกินกำหนด", "FILE_TOO_LARGE", false);
