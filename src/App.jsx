@@ -1068,16 +1068,22 @@ function App() {
   function startNewSession() {
     if (busy || autoCaptureRunning) return;
     const hasCurrentWork = Boolean(templateId || previewSrc || photos.some((photo) => photo.dataUrl));
-    if (hasCurrentWork && !window.confirm("เริ่มงานใหม่หรือไม่? รูปและ Template ที่เลือกไว้จะถูกล้างออกจากหน้านี้")) return;
+    if (hasCurrentWork && !window.confirm("เริ่มงานใหม่หรือไม่? รูปและการแก้ไขเดิมจะถูกล้างออกจากหน้านี้")) return;
 
     autoCaptureRef.current = false;
     captureLockRef.current = false;
     setAutoCaptureRunning(false);
     setCountdown(null);
     stopCamera();
-    setPhotos([]);
-    setTemplateId("");
-    setActivePhotoSlot(0);
+    const initialTemplate = driveTemplates[0];
+    const initialPhotos = initialTemplate
+      ? Array.from({ length: initialTemplate.slots.length }, createEmptyPhoto)
+      : [];
+    photosRef.current = initialPhotos;
+    setPhotos(initialPhotos);
+    setTemplateId(initialTemplate?.id || "");
+    setActiveSlot(0);
+    setCaptureMode("manual");
     setActiveStep(1);
     setPreviewSrc("");
     setLastUrl("");
@@ -1086,7 +1092,7 @@ function App() {
     saveInProgressRef.current = false;
     savedCompositionRef.current = false;
     saveOperationRef.current = null;
-    setStatus("เริ่มงานใหม่แล้ว กรุณาเลือก Template");
+    setStatus("พร้อมสร้าง Photo Card");
   }
 
   const selectedTemplate = driveTemplates.find((item) => item.id === templateId);
